@@ -11,8 +11,14 @@ pub fn options() -> Opt {
 #[structopt(author = env!("CARGO_PKG_AUTHORS"))]
 pub enum Opt {
     Generator(PasswordGenOpt),
+    // Manager(ManagerOpt),
+    AddSite(AddSiteOpt),
 }
-
+#[derive(StructOpt, Debug)]
+pub struct FlagsOpt {
+    #[structopt(long, default_value = "aot/I3YepRSH5AaZe+oDEQ")]
+    pub hasher_salt: String,
+}
 /// A password generation tool
 #[derive(StructOpt, Debug)]
 pub struct PasswordGenOpt {
@@ -38,23 +44,26 @@ pub struct PasswordGenOpt {
     pub default: bool,
 }
 
+#[derive(StructOpt, Debug)]
+pub enum ManagerOpt {
+    AddSite(AddSiteOpt),
+}
+
+#[derive(StructOpt, Debug)]
+pub struct AddSiteOpt {
+    #[structopt(short, long, required = true)]
+    pub site: String,
+    #[structopt(short, long, required = true)]
+    pub user: String,
+    #[structopt(long, default_value = "aot/I3YepRSH5AaZe+oDEQ")]
+    pub hasher_salt: String,
+}
+
 impl Opt {
     fn build() -> Self {
         let opt = Self::from_args();
         if let Opt::Generator(o) = opt {
-            if o.default {    
-                // let out = PasswordGenOpt {
-                //     numbers : true,
-                //     lowercase_letters : true,
-                //     uppercase_letters : true,
-                //     symbols : true,
-                //     exclude_similar_characters : true,
-                //     strict : true,
-                //     spaces : false,
-                //     default : true,
-                //     hasher_salt : opt.Generator.hasher_salt,
-                //     length :  opt.length,
-                // };      
+            if o.default {     
                 return Opt::Generator(PasswordGenOpt{
                     numbers : true,
                     lowercase_letters : true,
