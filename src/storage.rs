@@ -74,20 +74,6 @@ impl Account {
     }
 }
 
-// impl Accounts {
-//     pub fn new() -> Self {
-//         Accounts {
-//             accounts: HashMap::new()
-//         }
-//     }
-
-//     pub fn add_account(&mut self, id: String, account: Account) -> Account {
-//         let cloned = account.clone();
-//         self.accounts.insert(id, account);
-//         cloned
-//     }
-// }
-
 impl Drop for Account {
     fn drop(&mut self) {
         let encoded_account =self.try_to_vec().unwrap();
