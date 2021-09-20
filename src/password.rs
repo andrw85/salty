@@ -1,30 +1,41 @@
+use super::options::{Opt, PasswordGenOpt};
+use super::hasher;
 use passwords::PasswordGenerator;
-use super::options;
 use rpassword;
-use std::error::Error;
 use zxcvbn::zxcvbn;
 use convert_case::{Case, Casing};
-use strum_macros::Display;
+use std::fmt;
 use std::process;
 
-pub fn gen(parameters : options::Opt) -> Result<String, &'static str> { 
-    if let options::Opt::Generator(opt) = parameters {  
-        let pg  = PasswordGenerator {
-                length: opt.length,
-                numbers: opt.numbers,
-                lowercase_letters: opt.lowercase_letters,
-                uppercase_letters: opt.uppercase_letters,
-                symbols: opt.symbols,
-                spaces: opt.spaces,
-                exclude_similar_characters: opt.exclude_similar_characters,
-                strict: opt.strict,
-            };
+pub struct RandomPassword {
+    hash: String,
+    plaintext: String,
+}
 
-        pg.generate_one()
-    } else {
-        Err("Failed generating password")
+impl fmt::Display for RandomPassword {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.plaintext)
     }
-}        
+}
+
+pub fn generate_random_password(opt : PasswordGenOpt) -> Result<RandomPassword, &'static str> { 
+    let pg  = PasswordGenerator {
+        length: opt.length,
+        numbers: opt.numbers,
+        lowercase_letters: opt.lowercase_letters,
+        uppercase_letters: opt.uppercase_letters,
+        symbols: opt.symbols,
+        spaces: opt.spaces,
+        exclude_similar_characters: opt.exclude_similar_characters,
+        strict: opt.strict,
+    };
+    let mut result = RandomPassword {hash: "".to_owned(), plaintext: "".to_owned()};
+    result.plaintext = pg.generate_one().expect("Failed generating random password!");    
+    let PasswordGenOpt{ hasher_salt, .. } = opt;
+    result.hash = hasher::hash(&result.plaintext, &hasher_salt)?;
+
+    Ok(result)
+}
 
 pub fn get_password() -> String {
     rpassword::read_password().expect("Failed getting a password")

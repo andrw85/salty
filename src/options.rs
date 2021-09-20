@@ -3,7 +3,7 @@ pub use structopt::{StructOpt};
 pub fn options() -> Opt {
     Opt::build()
 }
-/// yaovault (Yet Another Open Vault) is an open implementation of a password management system.
+/// Salty  is an open implementation of a password management system.
 #[derive(StructOpt, Debug)]
 #[structopt(name = env!("CARGO_PKG_NAME"))]
 #[structopt(version = env!("CARGO_PKG_VERSION"))]
