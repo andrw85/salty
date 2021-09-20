@@ -1,6 +1,6 @@
 use pbkdf2::{
     password_hash::{
-        PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+        PasswordHash, PasswordHasher, PasswordVerifier
     },
     Pbkdf2
 };

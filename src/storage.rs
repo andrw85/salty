@@ -1,9 +1,8 @@
 use borsh::{BorshSerialize, BorshDeserialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 use std::cmp::Ordering;
 use std::fs::File;
 pub use cocoon::{Cocoon, Error};
-use std::result::Result::{Err};
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct Account {
