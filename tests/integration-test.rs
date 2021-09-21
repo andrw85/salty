@@ -1,4 +1,4 @@
-use salty::*;
+use salty::vault::*;
 
 #[test]
 fn test_account_add() {
