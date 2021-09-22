@@ -1,7 +1,14 @@
-[![salty-ci](https://github.com/andrw85/salty/actions/workflows/rust.yml/badge.svg)](https://github.com/andrw85/salty/actions/workflows/rust.yml)
+y[![salty-ci](https://github.com/andrw85/salty/actions/workflows/rust.yml/badge.svg)](https://github.com/andrw85/salty/actions/workflows/rust.yml)
 
 # Salty
 Salty is another open implementation of a password management system.
+
+## TODOS:
+
+- Create a web client using wasm.
+- Syncing between different computers whith some kind of authentication
+  mechanism (maybe using some p2p protocol).
+- Increment tests
 
 ## Running the help command
 
