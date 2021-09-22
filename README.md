@@ -6,8 +6,10 @@ Salty is another open implementation of a password management system.
 ## TODOS:
 
 - Create a web client using wasm.
-- Syncing between different computers whith some kind of authentication
-  mechanism (maybe using some p2p protocol).
+
+- Investigate whether secure syncing between different computers would be possible using some kind
+  of authentication mechanism (maybe using some p2p protocol).
+  
 - Increment tests
 
 ## Running the help command
