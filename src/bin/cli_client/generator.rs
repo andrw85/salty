@@ -1,5 +1,5 @@
-use crate::options::{PasswordGenOpt};
-use crate::wrappers::hasher;
+use super::options::{PasswordGenOpt};
+use salty::utils::hasher;
 use passwords::PasswordGenerator;
 use std::fmt;
 
