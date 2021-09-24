@@ -9,9 +9,7 @@ pub fn add_entry(opt: AddSiteOpt) -> Result<(), String> {
     if !Vault::exists() {
         return Err("No vault, you need to create one first!".to_string())
     }
-
-    println!("Insert Vault master password: ");
-    let password = password::get_password();
+    let password = PasswordQuery::new("Insert Vault master password: ").read();
     let pw_hashed = hasher::hash(&password, &hasher_salt).unwrap();
     
     let mut vault = match Vault::default(&pw_hashed) {
@@ -26,8 +24,7 @@ pub fn add_entry(opt: AddSiteOpt) -> Result<(), String> {
         }
     };
 
-    println!("Insert site password: ");
-    let password = password::get_password();
+    let password = PasswordQuery::new("Insert site password").read();
 
     let entry = AccountEntry::new(&site, &user, &password);
     if let Err(entry) = vault.account.add(entry) {
@@ -45,14 +42,14 @@ pub fn add_entry(opt: AddSiteOpt) -> Result<(), String> {
 }
 
 pub fn create_vault() -> Result<(), String> {
-
-    println!("Insert Vault master password: ");
-    let password = password::get_password();
-    let pw_hashed = hasher::hash(&password, "aot/I3YepRSH5AaZe+oDEQ").unwrap(); //TODO: make salt configurable
+    let result = PasswordQuery::new("Insert Vault master password").read_and().prompt("Insert one more time: ").confirm_read();
     
-    password::check_pass_strength(password)?;
-    Vault::new(&pw_hashed);
-
+    if let Ok(password) = result {
+        let pw_hashed = hasher::hash(&password, "aot/I3YepRSH5AaZe+oDEQ").unwrap(); //TODO: make salt configurable
+    
+        password::check_pass_strength(password)?;
+        Vault::new(&pw_hashed);
+    }
     Ok(())
 }
 
@@ -61,8 +58,7 @@ pub fn show_entries() -> Result<(), String> {
         return Err("No vault, you need to create one first!".to_string())
     }
 
-    println!("Insert Vault master password: ");
-    let password = password::get_password();
+    let password = PasswordQuery::new("Insert Vault master password").read();
     let pw_hashed = hasher::hash(&password, "aot/I3YepRSH5AaZe+oDEQ").unwrap(); //TODO: make salt configurable
     
     let vault = match Vault::default(&pw_hashed) {
