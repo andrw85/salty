@@ -4,7 +4,7 @@ use cocoon::Cocoon;
 use std::fs::File;
 use std::path::Path;
 
-static DEFAULT_FILE_PATH: &str = "target/test.db";
+static DEFAULT_FILE_PATH: &str = "vault.slt";
 
 pub struct Vault {
     master_pwd: String,
