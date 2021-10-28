@@ -3,19 +3,20 @@
 # Salty
 Salty is another open implementation of a password management system.
 
+security principles for hashing: https://crackstation.net/hashing-security.htm#normalhashing
+
 ## TODOS:
 
-- Create a web client using wasm.
+- remove dependency to Cocoon. Store the salt unencrypted plus the rest of the data encrypted. Salt must be same number of bytes as the hashing function. Change salt anytime user tries accessing the file with a valid password.
 
-- Investigate whether secure syncing between different computers would be possible using some kind
-  of authentication mechanism (maybe using some p2p protocol).
-  
+- Continue creating the web client using egui-eframe.
+
 - Increment tests
 
 ## Running the help command
 
 ```
-$ salty 
+$ salty
 salty 0.1.0
 Andrew O'Doherty <andrew.olv@gmail.com>
 Salty is an open implementation of a password management system.
@@ -28,24 +29,24 @@ FLAGS:
     -V, --version    Prints version information
 
 SUBCOMMANDS:
-    add-site        
-    create-vault    
+    add-site
+    create-vault
     generator       A password generation tool
     help            Prints this message or the help of the given subcommand(s)
-    show-entries    
+    show-entries
 ```
 
 ## Creating a vault
 
 ```
 $ salty create-vault
-Insert Vault master password: 
+Insert Vault master password:
 
 ```
 
 ## Adding an entry to the vault
 ```
-$ salty add-site 
+$ salty add-site
 error: The following required arguments were not provided:
     --site <site>
     --user <user>
@@ -58,9 +59,9 @@ For more information try --help
 
 ```
 $ salty add-site -u andrew -s test.com
-Insert Vault master password: 
+Insert Vault master password:
 
-Insert site password: 
+Insert site password:
 
 ```
 
@@ -68,7 +69,7 @@ Insert site password:
 
 ```
 $ salty show-entries
-Insert Vault master password: 
+Insert Vault master password:
 
 Account {
     sites: {
