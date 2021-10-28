@@ -1,6 +1,6 @@
-use super::options::{PasswordGenOpt};
-use salty::utils::hasher;
+use super::options::PasswordGenOpt;
 use passwords::PasswordGenerator;
+use salty::utils::hasher;
 use std::fmt;
 
 pub struct RandomPassword {
@@ -14,8 +14,8 @@ impl fmt::Display for RandomPassword {
     }
 }
 
-pub fn random_password(opt : PasswordGenOpt) -> Result<RandomPassword, &'static str> { 
-    let pg  = PasswordGenerator {
+pub fn random_password(opt: PasswordGenOpt) -> Result<RandomPassword, &'static str> {
+    let pg = PasswordGenerator {
         length: opt.length,
         numbers: opt.numbers,
         lowercase_letters: opt.lowercase_letters,
@@ -25,9 +25,14 @@ pub fn random_password(opt : PasswordGenOpt) -> Result<RandomPassword, &'static 
         exclude_similar_characters: opt.exclude_similar_characters,
         strict: opt.strict,
     };
-    let mut result = RandomPassword {hash: "".to_owned(), plaintext: "".to_owned()};
-    result.plaintext = pg.generate_one().expect("Failed generating random password!");    
-    let PasswordGenOpt{ hasher_salt, .. } = opt;
+    let mut result = RandomPassword {
+        hash: "".to_owned(),
+        plaintext: "".to_owned(),
+    };
+    result.plaintext = pg
+        .generate_one()
+        .expect("Failed generating random password!");
+    let PasswordGenOpt { hasher_salt, .. } = opt;
     result.hash = hasher::hash(&result.plaintext, &hasher_salt)?;
 
     Ok(result)

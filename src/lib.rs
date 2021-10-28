@@ -1,2 +1,2 @@
-pub mod vault;
 pub mod utils;
+pub mod vault;
