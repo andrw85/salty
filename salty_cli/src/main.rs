@@ -25,6 +25,11 @@ fn main() {
             Authenticator::new().validate_code();
             Ok(())
         }
+        Opt::None => {
+            // println!("Default vault in ~/.salty/");
+            // vault_cli::show_entries()
+            Ok(())
+        }
     };
 
     if let Err(msg) = result {
