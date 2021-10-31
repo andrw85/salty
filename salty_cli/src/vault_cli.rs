@@ -1,11 +1,11 @@
 use super::generator::gen_salt;
-use super::options::AddSiteOpt;
+use super::options::AddOpt;
 use question::{Answer, Question};
 use salty_vault::utils::*;
 use salty_vault::vault::{account::AccountEntry, vault::Vault};
 
-pub fn add_entry(opt: AddSiteOpt) -> Result<(), String> {
-    let AddSiteOpt {
+pub fn add_entry(opt: AddOpt) -> Result<(), String> {
+    let AddOpt {
         site,
         user,
         hasher_salt,
