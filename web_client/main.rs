@@ -25,7 +25,7 @@ impl epi::App for MyApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Current Account entries:");
             ui.horizontal(|ui| {
-                ui.label(format!("{}. {}", index, name));
+                ui.label(format!("{}. {}", 1, name));
                 // ui.text_edit_singleline(name);
             });
             ui.add(egui::Slider::new(age, 0..=120).text("age"));

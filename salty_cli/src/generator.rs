@@ -1,6 +1,6 @@
 use super::options::PasswordGenOpt;
 use passwords::PasswordGenerator;
-use salty::utils::hasher;
+use salty_vault::utils::hasher;
 use std::fmt;
 
 static PG: PasswordGenerator = PasswordGenerator {
