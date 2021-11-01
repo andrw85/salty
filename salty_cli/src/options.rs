@@ -1,11 +1,11 @@
-use std::env;
+use serde::{Deserialize, Serialize};
 pub use structopt::StructOpt;
 
 pub fn options() -> Opt {
     Opt::build()
 }
 /// Salty  is an open implementation of a password management system.
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Serialize, Deserialize)]
 #[structopt(name = env!("CARGO_PKG_NAME"))]
 #[structopt(version = env!("CARGO_PKG_VERSION"))]
 #[structopt(about = env!("CARGO_PKG_DESCRIPTION"))]
@@ -20,16 +20,15 @@ pub enum Opt {
     Show,
     /// One time password tool
     Totp,
-    None,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Serialize, Deserialize)]
 pub struct FlagsOpt {
     #[structopt(long, default_value = "aot/I3YepRSH5AaZe+oDEQ")]
     pub hasher_salt: String,
 }
 /// A password generation tool
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Serialize, Deserialize)]
 pub struct PasswordGenOpt {
     #[structopt(long, default_value = "8")]
     pub length: usize,
@@ -56,12 +55,12 @@ pub struct PasswordGenOpt {
     pub default: bool,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Serialize, Deserialize)]
 pub enum ManagerOpt {
     Add(AddOpt),
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Serialize, Deserialize)]
 pub struct AddOpt {
     #[structopt(short, long, required = true)]
     pub site: String,
@@ -73,16 +72,8 @@ pub struct AddOpt {
 
 impl Opt {
     fn build() -> Self {
-        if env::args_os().len() == 1 {
-            return Opt::None;
-        }
         let matches = Self::clap()
-            .setting(structopt::clap::AppSettings::DisableHelpSubcommand)
             .setting(structopt::clap::AppSettings::ColoredHelp)
-            .subcommand(
-                structopt::clap::SubCommand::with_name("None")
-                    .setting(structopt::clap::AppSettings::Hidden),
-            )
             .get_matches();
         let opt = Self::from_clap(&matches);
         if let Opt::Generator(o) = opt {
