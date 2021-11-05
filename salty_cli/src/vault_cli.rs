@@ -1,4 +1,4 @@
-use super::generator::gen_salt;
+use super::generator::*;
 use super::options::{AddOpt, Opt};
 
 use dirs;
@@ -37,7 +37,7 @@ impl VaultInstance {
     }
 
     /// creates a new vault
-    pub fn create_vault(mut self) -> Self {
+    pub fn create_vault() -> Self {
         let result = PasswordQuery::new("Insert Vault master password")
             .read_and()
             .prompt("Insert one more time: ")
@@ -60,7 +60,7 @@ impl VaultInstance {
         }
     }
 
-    pub fn add_entry(mut self, opt: AddOpt) -> Result<(), String> {
+    pub fn add_entry(opt: AddOpt) -> Result<(), String> {
         let AddOpt {
             site,
             user,
@@ -97,8 +97,59 @@ impl VaultInstance {
             process::exit(1);
         }
     }
-    pub fn run() {
-        loop {}
+
+    pub async fn run(self) -> Result<(), Box<dyn Error>> {
+        let vault = VaultInstance::new();
+        let path_socket = dirs::home_dir()
+            .expect("No home directory found in your system!")
+            .join(".salty/")
+            .join(SOCKET_NAME)
+            .to_str()
+            .expect("invalid path to socket!")
+            .to_owned();
+
+        let stream = UnixStream::connect(&path_socket).await?;
+        loop {
+            // wait for a command requested from CLI client
+
+            let ready = stream.ready(Interest::READABLE).await?;
+            if ready.is_readable() {
+                let mut data = vec![0; 1024];
+                match stream.try_read(&mut data) {
+                    Ok(_) => {
+                        let opt: Opt = serde_json::from_slice(&data)
+                            .expect("Could not deserialize cli command!");
+                        vault.run_command(opt);
+                        let ready = stream.ready(Interest::WRITABLE).await?;
+                        if ready.is_writable() {
+                            stream.try_write(b"done!")?;
+                        }
+                    }
+                    _ => continue,
+                }
+            }
+        }
+    }
+    fn run_command(self, opt: Opt) {
+        match opt {
+            Opt::Generator(params) => {
+                let pass = random_password(params).expect("Failed to generate random password");
+                println!("{}", pass);
+            }
+            Opt::Create => {
+                VaultInstance::create_vault();
+            }
+            Opt::Add(params) => {
+                VaultInstance::add_entry(params);
+            }
+            Opt::Show => {
+                VaultInstance::show_entries();
+            }
+            Opt::Totp => {
+                Authenticator::new().validate_code();
+            }
+        };
+        Ok(())
     }
 }
 
@@ -133,7 +184,7 @@ impl CliClient {
             }
             std::process::exit(0); // exit cli process
         }
-        println!("asdfadf3");
+
         CliClient {
             socket: path_socket,
         }
@@ -144,9 +195,21 @@ impl CliClient {
         let stream = UnixStream::connect(&self.socket).await?;
         let ready = stream.ready(Interest::WRITABLE).await?;
         if ready.is_writable() {
-            // Try to write data, this may still fail with `WouldBlock`
-            // if the readiness event is a false positive.
             stream.try_write(&serde_json::to_string(&opt).unwrap().into_bytes())?;
+        }
+
+        loop {
+            // wait for a response from the vault daemon
+            let ready = stream.ready(Interest::READABLE).await?;
+            if ready.is_readable() {
+                let mut data = vec![0; 1024];
+                match stream.try_read(&mut data) {
+                    Ok(n) => {
+                        break;
+                    }
+                    _ => continue,
+                }
+            }
         }
 
         Ok(())
