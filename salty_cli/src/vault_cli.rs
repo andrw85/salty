@@ -9,28 +9,27 @@ use salty_vault::utils::*;
 use salty_vault::vault::{account::AccountEntry, vault::Vault};
 use serde_json;
 use std::error::Error;
-use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::process;
-use tokio::io;
 use tokio::io::Interest;
 use tokio::net::UnixStream;
+use tokio::runtime::Runtime;
 
 const SOCKET_NAME: &str = "salty.sock";
 
-pub struct VaultInstance {
+pub struct VaultDaemon {
     hashed_master_pwd: String,
     vault: Vault,
 }
 
-impl VaultInstance {
+impl VaultDaemon {
     /// loads an already existant vault
-    fn new() -> Self {
+    fn load() -> Self {
         let password = PasswordQuery::new("Insert Vault master password: ").read();
         let hashed_pwd = hasher::hash(&password, &Vault::salt()).unwrap();
 
-        VaultInstance {
+        VaultDaemon {
             hashed_master_pwd: hashed_pwd.clone(),
             vault: Vault::default(&hashed_pwd).expect("Failed loading vault!"),
         }
@@ -54,13 +53,13 @@ impl VaultInstance {
         }
 
         password::check_pass_strength(pass);
-        VaultInstance {
+        VaultDaemon {
             hashed_master_pwd: hashed_pwd.clone(),
             vault: Vault::new(&hashed_pwd, &salt),
         }
     }
 
-    pub fn add_entry(opt: AddOpt) -> Result<(), String> {
+    pub fn add_entry(&mut self, opt: AddOpt) -> Result<(), String> {
         let AddOpt {
             site,
             user,
@@ -85,7 +84,7 @@ impl VaultInstance {
         Ok(())
     }
 
-    pub fn show_entries(self) -> Result<(), String> {
+    pub fn show_entries(&self) -> Result<(), String> {
         println!("{:#?}", self.vault.account); //TODO: switch to use std::fmt::Display instead of Debug
 
         Ok(())
@@ -98,11 +97,28 @@ impl VaultInstance {
         }
     }
 
-    pub async fn run(self) -> Result<(), Box<dyn Error>> {
-        let vault = VaultInstance::new();
-        let path_socket = dirs::home_dir()
+    pub fn run() -> Result<(), Box<dyn Error>> {
+        let mut daemon = {
+            if Vault::exists() {
+                VaultDaemon::load()
+            } else {
+                VaultDaemon::create_vault()
+            }
+        };
+        // Create the runtime
+        let rt = Runtime::new()?;
+        // Spawn a future onto the runtime
+        rt.spawn(async move {
+            daemon.run_loop().await;
+        });
+        Ok(())
+    }
+
+    async fn run_loop(&mut self) -> Result<(), Box<dyn Error>> {
+        let default_dir = dirs::home_dir()
             .expect("No home directory found in your system!")
-            .join(".salty/")
+            .join(".salty/");
+        let path_socket = default_dir
             .join(SOCKET_NAME)
             .to_str()
             .expect("invalid path to socket!")
@@ -119,7 +135,7 @@ impl VaultInstance {
                     Ok(_) => {
                         let opt: Opt = serde_json::from_slice(&data)
                             .expect("Could not deserialize cli command!");
-                        vault.run_command(opt);
+                        self.run_command(opt);
                         let ready = stream.ready(Interest::WRITABLE).await?;
                         if ready.is_writable() {
                             stream.try_write(b"done!")?;
@@ -130,88 +146,25 @@ impl VaultInstance {
             }
         }
     }
-    fn run_command(self, opt: Opt) {
+
+    fn run_command(&mut self, opt: Opt) {
         match opt {
             Opt::Generator(params) => {
                 let pass = random_password(params).expect("Failed to generate random password");
                 println!("{}", pass);
             }
             Opt::Create => {
-                VaultInstance::create_vault();
+                VaultDaemon::create_vault();
             }
             Opt::Add(params) => {
-                VaultInstance::add_entry(params);
+                self.add_entry(params);
             }
             Opt::Show => {
-                VaultInstance::show_entries();
+                self.show_entries();
             }
             Opt::Totp => {
                 Authenticator::new().validate_code();
             }
         };
-        Ok(())
-    }
-}
-
-pub struct CliClient {
-    // vault: VaultInstance,
-    socket: String,
-}
-
-impl CliClient {
-    pub fn new() -> CliClient {
-        let path_socket = dirs::home_dir()
-            .expect("No home directory found in your system!")
-            .join(".salty/")
-            .join(SOCKET_NAME)
-            .to_str()
-            .expect("invalid path to socket!")
-            .to_owned();
-
-        let pid_file = dirs::home_dir()
-            .expect("No home directory found in your system!")
-            .join(".salty/")
-            .join("pid");
-
-        if !pid_file.as_path().exists() {
-            ///https://docs.rs/fork/0.1.18/fork/fn.daemon.html
-            if let Ok(Fork::Child) = daemon(false, true) {
-                println!("Created vault process!");
-                let mut file = File::create(pid_file.as_path()).expect("Failed creating Pid file");
-                file.write_all(std::process::id().to_string().as_bytes());
-                file.flush();
-                VaultInstance::run();
-            }
-            std::process::exit(0); // exit cli process
-        }
-
-        CliClient {
-            socket: path_socket,
-        }
-    }
-    /// https://gist.github.com/tesaguri/b27d0d35d1a45465ddc9cb32a3ebe9ae
-    /// https://docs.rs/tokio/1.13.0/tokio/net/struct.UnixStream.html
-    pub async fn send_command(self, opt: Opt) -> Result<(), Box<dyn Error>> {
-        let stream = UnixStream::connect(&self.socket).await?;
-        let ready = stream.ready(Interest::WRITABLE).await?;
-        if ready.is_writable() {
-            stream.try_write(&serde_json::to_string(&opt).unwrap().into_bytes())?;
-        }
-
-        loop {
-            // wait for a response from the vault daemon
-            let ready = stream.ready(Interest::READABLE).await?;
-            if ready.is_readable() {
-                let mut data = vec![0; 1024];
-                match stream.try_read(&mut data) {
-                    Ok(n) => {
-                        break;
-                    }
-                    _ => continue,
-                }
-            }
-        }
-
-        Ok(())
     }
 }

@@ -9,6 +9,7 @@ Salty uses a key stretching algorithm call PBKDF2 with a random generated salt o
 
 ## TODOS:
 
+- Refactor PasswordQuery so that it can be implemented specifically for different clients. For example in a cli client we want an specific behaviour for asking and confirming the password different than in a web client. Naming could be something similar to PasswordQueryCli or PasswordQueryWeb...
 - Change salt anytime user tries accessing the vault and he introduces a valid master password.
 
 - Continue creating the web client using egui-eframe.
