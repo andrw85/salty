@@ -5,11 +5,11 @@ Salty is another open implementation of a password management system.
 
 security principles for hashing: https://crackstation.net/hashing-security.htm#normalhashing
 
-Salty uses a key stretching algorithm call PBKDF2 with a random generated sha256 salt to reduce vulnerabilities of brute-force attacks. The ouput of this hashing function is also a sha256 key.
+Salty uses a key stretching algorithm call PBKDF2 with a random generated salt of 63 bytes to reduce vulnerabilities of brute-force attacks. The ouput of this hashing function is also a sha256 key.
 
 ## TODOS:
 
-- remove dependency to Cocoon. Store the salt unencrypted plus the rest of the data encrypted. Salt must be same number of bytes as the hashing function. Change salt anytime user tries accessing the file with a valid password.
+- Change salt anytime user tries accessing the vault and he introduces a valid master password.
 
 - Continue creating the web client using egui-eframe.
 
