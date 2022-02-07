@@ -42,20 +42,52 @@ SUBCOMMANDS:
 
 ```
 $ cargo install --path salty_cli/
-  Installing salty v0.1.0 (/Users/aodoher/src/salty)
+Insert Vault master password:
+  Installing salty v0.1.0 (/Users/aodoher/src/salty/salty_cli)
     Updating crates.io index
-  Downloaded ab_glyph_rasterizer v0.1.5
-  Downloaded libc v0.2.106
-  Downloaded 2 crates (565.1 KB) in 0.84s
    Compiling libc v0.2.106
    Compiling version_check v0.9.3
    Compiling cfg-if v1.0.0
    Compiling proc-macro2 v1.0.32
    Compiling unicode-xid v0.2.2
-   Compiling syn v1.0.81
-   Compiling typenum v1.14.0
-   Compiling autocfg v1.0.1
-   Compiling log v0.4.14
-   Compiling bitflags v1.3.2
-...
+
+....
+```
+
+## Adding an entry to the vault
+```
+$ salty add-site
+error: The following required arguments were not provided:
+    --site <site>
+    --user <user>
+
+USAGE:
+    salty add-site --hasher-salt <hasher-salt> --site <site> --user <user>
+
+For more information try --help
+```
+
+```
+$ salty add-site -u andrew -s test.com
+Insert Vault master password:
+
+Insert site password:
+
+```
+
+## Showing entries stored in encrypted vault
+
+```
+$ salty show-entries
+Insert Vault master password:
+
+Account {
+    sites: {
+        AccountEntry {
+            site_name: "test.com",
+            user_name: "andrew",
+            pwd: "123as-123=as2",
+        },
+    },
+}
 ```

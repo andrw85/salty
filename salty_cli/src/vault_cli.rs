@@ -1,8 +1,8 @@
 use super::generator::gen_salt;
 use super::options::AddSiteOpt;
 use question::{Answer, Question};
-use salty::utils::*;
-use salty::vault::{account::AccountEntry, vault::Vault};
+use salty_vault::utils::*;
+use salty_vault::vault::{account::AccountEntry, vault::Vault};
 
 pub fn add_entry(opt: AddSiteOpt) -> Result<(), String> {
     let AddSiteOpt {
