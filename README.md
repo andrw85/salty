@@ -15,7 +15,7 @@ Salty is another open implementation of a password management system.
 ## Running the help command
 
 ```
-$ ./salty 
+$ salty 
 salty 0.1.0
 Andrew O'Doherty <andrew.olv@gmail.com>
 Salty is an open implementation of a password management system.
@@ -38,14 +38,14 @@ SUBCOMMANDS:
 ## Creating a vault
 
 ```
-$ target/debug/salty create-vault
+$ salty create-vault
 Insert Vault master password: 
 
 ```
 
 ## Adding an entry to the vault
 ```
-$ target/debug/salty add-site 
+$ salty add-site 
 error: The following required arguments were not provided:
     --site <site>
     --user <user>
@@ -57,7 +57,7 @@ For more information try --help
 ```
 
 ```
-$ target/debug/salty add-site -u andrew -s test.com
+$ salty add-site -u andrew -s test.com
 Insert Vault master password: 
 
 Insert site password: 
@@ -67,7 +67,7 @@ Insert site password:
 ## Showing entries stored in encrypted vault
 
 ```
-$ target/debug/salty show-entries
+$ salty show-entries
 Insert Vault master password: 
 
 Account {
