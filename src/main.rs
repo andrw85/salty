@@ -1,28 +1,13 @@
-mod options;
-mod password;
-mod hasher;
-mod storage;
-use options::options;
-use options::{Opt, ManagerOpt,PasswordGenOpt, AddSiteOpt};
-use storage::{Account, AccountEntry};
-use password::get_password;
-use question::{Answer,Question};
+use salty::{Opt, AddSiteOpt, Account, AccountEntry, Question, Answer, zxcvbn, Case, Casing, hasher, password};
 use std::process;
-use zxcvbn::zxcvbn;
-use convert_case::{Case, Casing};
-use strum_macros::Display;
 
 fn main() {
-    let opt = options();       
-    // let pw = password::gen(opt).unwrap();
+    let opt = salty::options();       
+    
     match opt {
-        Opt::Generator(PasswordGenOpt{ hasher_salt, .. }) => {
-
-            let pw = "holahola".to_string() + &hasher_salt;
-            let pw_hashed = hasher::hash(&pw, &hasher_salt).unwrap();
-            
-            println!("pwd: {:?}", &pw);
-            println!("hash: {:?}", &pw_hashed);
+        Opt::Generator(params) => {
+            let pass = password::generate_random_password(params).expect("Failed to generate random password");
+            println!("{}", pass);
         },
         Opt::AddSite(AddSiteOpt{site, user,hasher_salt}) => {
             println!("Vault master password: ");
@@ -30,7 +15,7 @@ fn main() {
             let pw_hashed = hasher::hash(&password, &hasher_salt).unwrap();
             
             let mut account = match Account::load_from_file(&pw_hashed) {
-                Ok(mut acc) => {
+                Ok(acc) => {
                     acc
                 },
                 Err(cocoon::Error::Cryptography) => {
