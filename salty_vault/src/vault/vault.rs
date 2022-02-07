@@ -1,12 +1,21 @@
 use super::account::Account;
 use borsh::{BorshDeserialize, BorshSerialize};
 use cocoon::Cocoon;
+use dirs;
 use passwords::PasswordGenerator;
 use std::fs;
 use std::fs::File;
 use std::path::Path;
 
-static DEFAULT_FILE_PATH: &str = "vault.slt";
+fn default_file_path() -> String {
+    dirs::home_dir()
+        .expect("No home directory found in your system!")
+        .join(".salty/")
+        .join("vault.slt")
+        .to_str()
+        .expect("invalid path to config directroy!")
+        .to_owned()
+}
 
 pub struct Vault {
     master_pwd: String,
@@ -17,20 +26,29 @@ pub struct Vault {
 
 impl Vault {
     pub fn new<'a, 'b>(master_pwd: &'a str, salt: &'b str) -> Self {
+        let default_dir = dirs::home_dir()
+            .expect("No home directory found in your system!")
+            .join(".salty/")
+            .to_str()
+            .expect("invalid path to config directroy!")
+            .to_owned();
+
+        fs::create_dir(default_dir).ok();
+
         Vault {
             master_pwd: master_pwd.to_owned(),
             salt: salt.to_owned(),
             account: Account::new(),
-            file_path: DEFAULT_FILE_PATH.to_owned(),
+            file_path: default_file_path(),
         }
     }
 
     pub fn default<'a>(master_pwd: &'a str) -> Result<Self, cocoon::Error> {
-        Self::from_file(master_pwd, DEFAULT_FILE_PATH)
+        Self::from_file(master_pwd, &default_file_path())
     }
 
     pub fn salt() -> String {
-        let salt_file = format!("{}{}", DEFAULT_FILE_PATH, ".salt");
+        let salt_file = format!("{}{}", default_file_path(), ".salt");
         fs::read_to_string(&salt_file).expect("Unable to read salt file")
     }
 
@@ -57,7 +75,7 @@ impl Vault {
     }
 
     pub fn exists() -> bool {
-        return Path::new(DEFAULT_FILE_PATH).exists();
+        return Path::new(&default_file_path()).exists();
     }
 }
 
