@@ -53,6 +53,10 @@ impl Account {
         let res = Self::try_from_slice(&encoded_data)?;
         Ok(res)
     }
+    
+    pub fn size(&self) -> usize {
+        return self.sites.len();
+    }
 
     pub fn add(&mut self, entry: AccountEntry) -> Result<(), AccountEntry> {
         if self.sites.contains(&entry) {
