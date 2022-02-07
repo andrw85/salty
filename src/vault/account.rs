@@ -1,7 +1,6 @@
 use borsh::{BorshSerialize, BorshDeserialize};
 use std::collections::{HashSet};
 use std::cmp::Ordering;
-use std::fs::File;
 pub use cocoon::{Cocoon, Error};
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
