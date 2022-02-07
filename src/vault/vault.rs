@@ -1,24 +1,30 @@
 use super::account::Account;
 use borsh::{BorshSerialize, BorshDeserialize};
-use cocoon::{Cocoon, Error};
+use cocoon::{Cocoon};
 use std::fs::File;
-use std::path;
+use std::path::Path;
 
-struct Vault {
+static DEFAULT_FILE_PATH: &str = "target/test.db";
+
+pub struct Vault {
     master_pwd: String,
-    account: Account, 
+    pub account: Account, 
     file_path: String,
 }
 
+
 impl Vault {
-    pub fn default<'a>(master_pwd: &'a str) -> Self {
+    pub fn new<'a>(master_pwd: &'a str) -> Self {
         Vault {
             master_pwd: master_pwd.to_owned(),
             account:  Account::new(),
-            file_path: "target/test.db".to_owned(),
+            file_path: DEFAULT_FILE_PATH.to_owned(),
         }        
     }
 
+    pub fn default<'a>(master_pwd: &'a str) -> Result<Self,cocoon::Error>  {
+        Self::from_file(master_pwd, DEFAULT_FILE_PATH)
+    }
     
     pub fn from_file<'a,'b>(master_password: &'a str, path: &'b str) -> Result<Self,cocoon::Error> {
         let mut file = File::open(&path)?;
@@ -37,14 +43,17 @@ impl Vault {
 
         Ok(vault)
     }
-    
+
+    pub fn exists() -> bool {
+        return Path::new(DEFAULT_FILE_PATH).exists();
+    }
 }
 
 impl Drop for Vault {
     fn drop(&mut self) {
         let encoded_account =self.account.try_to_vec().unwrap();
 
-        let mut file = File::create(file_path).expect("Could not create db file.");
+        let mut file = File::create(&self.file_path).expect("Could not create db file.");
         
         let cocoon = Cocoon::new(&self.master_pwd.as_bytes());
         // Dump the serialized database into a file as an encrypted container.
