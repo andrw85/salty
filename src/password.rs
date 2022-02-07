@@ -1,4 +1,4 @@
-use super::options::{Opt, PasswordGenOpt};
+use super::options::{PasswordGenOpt};
 use super::hasher;
 use passwords::PasswordGenerator;
 use rpassword;
