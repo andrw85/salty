@@ -1,3 +1,4 @@
+use std::env;
 pub use structopt::StructOpt;
 
 pub fn options() -> Opt {
@@ -19,6 +20,7 @@ pub enum Opt {
     Show,
     /// One time password tool
     Totp,
+    None,
 }
 
 #[derive(StructOpt, Debug)]
@@ -71,7 +73,18 @@ pub struct AddOpt {
 
 impl Opt {
     fn build() -> Self {
-        let opt = Self::from_args();
+        if env::args_os().len() == 1 {
+            return Opt::None;
+        }
+        let matches = Self::clap()
+            .setting(structopt::clap::AppSettings::DisableHelpSubcommand)
+            .setting(structopt::clap::AppSettings::ColoredHelp)
+            .subcommand(
+                structopt::clap::SubCommand::with_name("None")
+                    .setting(structopt::clap::AppSettings::Hidden),
+            )
+            .get_matches();
+        let opt = Self::from_clap(&matches);
         if let Opt::Generator(o) = opt {
             if o.default {
                 return Opt::Generator(PasswordGenOpt {
