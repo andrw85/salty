@@ -1,4 +1,4 @@
-pub use structopt::{StructOpt};
+pub use structopt::StructOpt;
 
 pub fn options() -> Opt {
     Opt::build()
@@ -14,7 +14,10 @@ pub enum Opt {
     CreateVault,
     AddSite(AddSiteOpt),
     ShowEntries,
+    /// one time password tool
+    Totp,
 }
+
 #[derive(StructOpt, Debug)]
 pub struct FlagsOpt {
     #[structopt(long, default_value = "aot/I3YepRSH5AaZe+oDEQ")]
@@ -41,7 +44,10 @@ pub struct PasswordGenOpt {
     pub strict: bool,
     #[structopt(long, default_value = "aot/I3YepRSH5AaZe+oDEQ")]
     pub hasher_salt: String,
-    #[structopt(long, required_unless = "numbers, lowercase_letters, uppercase_letters, symbols, spaces")]
+    #[structopt(
+        long,
+        required_unless = "numbers, lowercase_letters, uppercase_letters, symbols, spaces"
+    )]
     pub default: bool,
 }
 
@@ -64,21 +70,21 @@ impl Opt {
     fn build() -> Self {
         let opt = Self::from_args();
         if let Opt::Generator(o) = opt {
-            if o.default {     
-                return Opt::Generator(PasswordGenOpt{
-                    numbers : true,
-                    lowercase_letters : true,
-                    uppercase_letters : true,
-                    symbols : true,
-                    exclude_similar_characters : true,
-                    strict : true,
-                    spaces : false,
-                    default : true,
+            if o.default {
+                return Opt::Generator(PasswordGenOpt {
+                    numbers: true,
+                    lowercase_letters: true,
+                    uppercase_letters: true,
+                    symbols: true,
+                    exclude_similar_characters: true,
+                    strict: true,
+                    spaces: false,
+                    default: true,
                     hasher_salt: o.hasher_salt,
                     length: o.length,
-                })
+                });
             }
-            return Opt::Generator(o)
+            return Opt::Generator(o);
         }
         opt
     }
