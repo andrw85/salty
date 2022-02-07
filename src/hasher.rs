@@ -1,4 +1,3 @@
-use rand_core::OsRng;
 use pbkdf2::{
     password_hash::{
         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
