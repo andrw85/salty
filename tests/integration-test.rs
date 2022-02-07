@@ -2,11 +2,9 @@ use salty::*;
 
 #[test]
 fn test_account_add() {
-    let pwd = "Hello";
-    let hasher_salt = "xxxx";
-    let pw_hashed = hasher::hash(&pwd, &hasher_salt).unwrap();
 
-    let mut account = Account::new(&pw_hashed);
+
+    let mut account = Account::new();
     let entry = AccountEntry::new("google", "andrew", "123456789");
     let entry2 = AccountEntry::new("amazon", "andrew", "123456789");
     let entry3 = AccountEntry::new("facebook", "andrew", "123456789");
@@ -20,3 +18,8 @@ fn test_account_add() {
     
     assert_eq!(account.size(), 3);
 }
+
+
+    // let pwd = "Hello";
+    // let hasher_salt = "xxxx";
+    // let pw_hashed = hasher::hash(&pwd, &hasher_salt).unwrap();
