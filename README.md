@@ -38,11 +38,59 @@ SUBCOMMANDS:
     show-entries
 ```
 
+## How to start the development environment
+
+There is a Makefile that can be used to build a docker container used as development environment. To build and run it execute the following command:
+```
+$ make
+docker build --build-arg USER_ID=76119 --build-arg GROUP_ID=28563 -t salty  - < Dockerfile
+Sending build context to Docker daemon  2.048kB
+Step 1/9 : FROM rust:latest
+ ---> 269d9943b0d3
+Step 2/9 : ARG USER_ID
+ ---> Using cache
+ ---> d4006db69878
+Step 3/9 : ARG GROUP_ID
+ ---> Using cache
+ ---> 0ea9ff6a717b
+Step 4/9 : RUN echo "root:root" | chpasswd
+ ---> Using cache
+ ---> 47e27a74b4a9
+Step 5/9 : RUN groupadd -g $GROUP_ID salty
+ ---> Using cache
+ ---> 2b173556ab8c
+Step 6/9 : RUN useradd -m -r -u $USER_ID -g $GROUP_ID salty
+ ---> Using cache
+ ---> b9f0e827bafa
+Step 7/9 : WORKDIR /home/salty
+ ---> Using cache
+ ---> dd4996830ecb
+Step 8/9 : USER salty
+ ---> Using cache
+ ---> 18818121e326
+Step 9/9 : CMD ["/bin/bash"]
+ ---> Using cache
+ ---> e668f91c6358
+Successfully built e668f91c6358
+Successfully tagged salty:latest
+docker run -v /home/andrew/rust/salty:/home/salty -it salty:latest
+salty@2e9dab4c671e:~$
+```
+
+If you want to skip the docker image building phase and access the docker container CLI run:
+```
+ $ make run
+```
+You will end up with a prompt within the docker container. You can build the project by running:
+
+```
+salty@4856ba2b491e:~$ cargo build
+```
 ## How to install salty
 
 ```
 $ cargo install --path salty_cli/
-  Installing salty v0.1.0 (/Users/aodoher/src/salty)
+  Installing salty v0.1.0 (/Users/andrew/src/salty)
     Updating crates.io index
   Downloaded ab_glyph_rasterizer v0.1.5
   Downloaded libc v0.2.106
