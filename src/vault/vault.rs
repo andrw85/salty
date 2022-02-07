@@ -1,6 +1,8 @@
 use super::account::Account;
 use borsh::{BorshDeserialize, BorshSerialize};
 use cocoon::Cocoon;
+use passwords::PasswordGenerator;
+use std::fs;
 use std::fs::File;
 use std::path::Path;
 
@@ -8,14 +10,16 @@ static DEFAULT_FILE_PATH: &str = "vault.slt";
 
 pub struct Vault {
     master_pwd: String,
+    salt: String,
     pub account: Account,
     file_path: String,
 }
 
 impl Vault {
-    pub fn new<'a>(master_pwd: &'a str) -> Self {
+    pub fn new<'a, 'b>(master_pwd: &'a str, salt: &'b str) -> Self {
         Vault {
             master_pwd: master_pwd.to_owned(),
+            salt: salt.to_owned(),
             account: Account::new(),
             file_path: DEFAULT_FILE_PATH.to_owned(),
         }
@@ -23,6 +27,11 @@ impl Vault {
 
     pub fn default<'a>(master_pwd: &'a str) -> Result<Self, cocoon::Error> {
         Self::from_file(master_pwd, DEFAULT_FILE_PATH)
+    }
+
+    pub fn salt() -> String {
+        let salt_file = format!("{}{}", DEFAULT_FILE_PATH, ".salt");
+        fs::read_to_string(&salt_file).expect("Unable to read salt file")
     }
 
     pub fn from_file<'a, 'b>(
@@ -39,6 +48,7 @@ impl Vault {
 
         let vault = Vault {
             master_pwd: master_password.to_owned(),
+            salt: Self::salt(),
             account: Account::try_from_slice(&encoded_data).unwrap(),
             file_path: path.to_owned(),
         };
@@ -54,6 +64,9 @@ impl Vault {
 impl Drop for Vault {
     fn drop(&mut self) {
         let encoded_account = self.account.try_to_vec().unwrap();
+
+        let salt_file = self.file_path.clone() + ".salt";
+        fs::write(&salt_file, self.salt.clone()).expect("Unable to write salt file");
 
         let mut file = File::create(&self.file_path).expect("Could not create db file.");
 
