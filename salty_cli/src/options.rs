@@ -11,10 +11,13 @@ pub fn options() -> Opt {
 #[structopt(author = env!("CARGO_PKG_AUTHORS"))]
 pub enum Opt {
     Generator(PasswordGenOpt),
-    CreateVault,
-    AddSite(AddSiteOpt),
-    ShowEntries,
-    /// one time password tool
+    /// Create a vault
+    Create,
+    /// Add an entry
+    Add(AddOpt),
+    /// Show entries
+    Show,
+    /// One time password tool
     Totp,
 }
 
@@ -53,11 +56,11 @@ pub struct PasswordGenOpt {
 
 #[derive(StructOpt, Debug)]
 pub enum ManagerOpt {
-    AddSite(AddSiteOpt),
+    Add(AddOpt),
 }
 
 #[derive(StructOpt, Debug)]
-pub struct AddSiteOpt {
+pub struct AddOpt {
     #[structopt(short, long, required = true)]
     pub site: String,
     #[structopt(short, long, required = true)]
