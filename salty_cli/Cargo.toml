@@ -15,3 +15,11 @@ question = "0.2.2"
 cocoon = "0.3.0"
 
 salty_vault = { path = "../salty_vault" }
+
+dirs = "4.0.0"
+futures = "0.3.17"
+tokio = { version = "1.13.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+fork = "0.1.10"

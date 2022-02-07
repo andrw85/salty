@@ -2,38 +2,44 @@ pub mod generator;
 pub mod options;
 pub mod vault_cli;
 
-pub use generator::{random_password, RandomPassword};
-pub use options::{options, AddOpt, FlagsOpt, ManagerOpt, Opt, PasswordGenOpt};
+use std::env;
+// pub use generator::{random_password, RandomPassword};
+// pub use options::{options, AddOpt, FlagsOpt, ManagerOpt, Opt, PasswordGenOpt};
+// use salty_vault::utils::authenticator::Authenticator;
+use options::options;
 use std::process;
-pub use vault_cli::add_entry;
+use vault_cli::CliClient;
 
-use salty_vault::utils::authenticator::Authenticator;
+#[tokio::main]
+async fn main() {
+    let vault_cli = CliClient::new();
 
-fn main() {
-    let opt = options::options();
-    let result: Result<(), String> = match opt {
-        Opt::Generator(params) => {
-            let pass =
-                generator::random_password(params).expect("Failed to generate random password");
-            println!("{}", pass);
-            Ok(())
-        }
-        Opt::Create => vault_cli::create_vault(),
-        Opt::Add(params) => vault_cli::add_entry(params),
-        Opt::Show => vault_cli::show_entries(),
-        Opt::Totp => {
-            Authenticator::new().validate_code();
-            Ok(())
-        }
-        Opt::None => {
-            // println!("Default vault in ~/.salty/");
-            // vault_cli::show_entries()
-            Ok(())
-        }
-    };
-
-    if let Err(msg) = result {
-        eprintln!("{}", msg);
-        process::exit(1);
+    if env::args_os().len() == 1 {
+        // when no CLI arguments
+        // println!("Default vault in ~/.salty/");
+        return;
     }
+
+    let opt = options::options();
+    vault_cli.send_command(opt);
+    // let result: Result<(), String> = match opt {
+    //     Opt::Generator(params) => {
+    //         let pass =
+    //             generator::random_password(params).expect("Failed to generate random password");
+    //         println!("{}", pass);
+    //         Ok(())
+    //     }
+    //     Opt::Create => vault_cli::create_vault(),
+    //     Opt::Add(params) => vault_cli::add_entry(params),
+    //     Opt::Show => vault_cli::show_entries(),
+    //     Opt::Totp => {
+    //         Authenticator::new().validate_code();
+    //         Ok(())
+    //     }
+    // };
+
+    // if let Err(msg) = result {
+    //     eprintln!("{}", msg);
+    //     process::exit(1);
+    // }
 }
