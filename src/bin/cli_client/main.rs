@@ -1,9 +1,14 @@
-use salty::options::{Opt};
-use salty::cli_commands::{generator, vault_cli};
+pub mod generator;
+pub mod vault_cli;
+pub mod options;
+
+pub use generator::{RandomPassword, random_password};
+pub use vault_cli::{add_entry};
+pub use options::{options, Opt, PasswordGenOpt, FlagsOpt, ManagerOpt, AddSiteOpt};
 use std::process;
 
 fn main() {
-    let opt = salty::options::options();       
+    let opt = options::options();
     
     let result: Result<(), String> = match opt {
         Opt::Generator(params) => {

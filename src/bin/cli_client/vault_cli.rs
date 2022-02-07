@@ -1,6 +1,6 @@
-use crate::wrappers::*;
-use crate::vault::{vault::{Vault}, account::{Account, AccountEntry}};
-use crate::options::{AddSiteOpt};
+use salty::utils::*;
+use salty::vault::{vault::{Vault}, account::{AccountEntry}};
+use super::options::{AddSiteOpt};
 use question::{Answer,Question};
 
 pub fn add_entry(opt: AddSiteOpt) -> Result<(), String> {
@@ -65,7 +65,7 @@ pub fn show_entries() -> Result<(), String> {
     let password = password::get_password();
     let pw_hashed = hasher::hash(&password, "aot/I3YepRSH5AaZe+oDEQ").unwrap(); //TODO: make salt configurable
     
-    let mut vault = match Vault::default(&pw_hashed) {
+    let vault = match Vault::default(&pw_hashed) {
         Ok(acc) => {
             acc
         },
@@ -77,7 +77,7 @@ pub fn show_entries() -> Result<(), String> {
         }
     };
 
-    println!("{:?}", vault.account); //TODO: switch to use std::fmt::Display instead of Debug
+    println!("{:#?}", vault.account); //TODO: switch to use std::fmt::Display instead of Debug
 
     Ok(())
 }

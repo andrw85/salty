@@ -36,7 +36,7 @@ impl Vault {
         let encoded_data = cocoon.parse(&mut file)?;
                 
         let vault = Vault {
-            master_pwd: "".to_owned(),
+            master_pwd: master_password.to_owned(),
             account:  Account::try_from_slice(&encoded_data).unwrap(),
             file_path: path.to_owned(),
         };
