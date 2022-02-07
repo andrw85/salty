@@ -1,0 +1,17 @@
+[package]
+name = "salty"
+version = "0.1.0"
+edition = "2018"
+authors = ["Andrew O'Doherty <andrew.olv@gmail.com>"]
+description = "Salty is an open implementation of a password management system."
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+passwords = "3"
+structopt = "0.3"
+question = "0.2.2"
+
+# encrypted file
+cocoon = "0.3.0"
+
+salty_vault = { path = "../salty_vault" }

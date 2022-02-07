@@ -7,7 +7,7 @@ pub use options::{options, AddSiteOpt, FlagsOpt, ManagerOpt, Opt, PasswordGenOpt
 use std::process;
 pub use vault_cli::add_entry;
 
-use salty::utils::authenticator::Authenticator;
+use salty_vault::utils::authenticator::Authenticator;
 
 fn main() {
     let opt = options::options();
