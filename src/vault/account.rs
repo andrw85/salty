@@ -1,13 +1,13 @@
-use borsh::{BorshSerialize, BorshDeserialize};
-use std::collections::{HashSet};
-use std::cmp::Ordering;
+use borsh::{BorshDeserialize, BorshSerialize};
 pub use cocoon::{Cocoon, Error};
+use std::cmp::Ordering;
+use std::collections::HashSet;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct Account {
-    sites: HashSet<AccountEntry>
+    sites: HashSet<AccountEntry>,
 }
- 
+
 #[derive(BorshSerialize, BorshDeserialize, Hash, Eq, PartialEq, PartialOrd, Clone, Debug)]
 pub struct AccountEntry {
     site_name: String,
@@ -37,7 +37,7 @@ impl Account {
             sites: HashSet::new(),
         }
     }
-    
+
     pub fn size(&self) -> usize {
         return self.sites.len();
     }
@@ -50,11 +50,10 @@ impl Account {
         Ok(())
     }
 
-    pub fn force_add(&mut self, entry: AccountEntry){
+    pub fn force_add(&mut self, entry: AccountEntry) {
         if self.sites.is_empty() {
             self.sites = HashSet::new();
         }
         self.sites.insert(entry);
     }
 }
-
