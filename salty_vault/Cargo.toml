@@ -33,3 +33,4 @@ anyhow = "1.0.44"
 eframe = "0.15.0"
 
 dirs = "4.0.0"
+serial_test = "0.5.1"

@@ -2,61 +2,85 @@ use super::account::Account;
 use borsh::{BorshDeserialize, BorshSerialize};
 use cocoon::Cocoon;
 use dirs;
-use passwords::PasswordGenerator;
+
 use std::fs;
 use std::fs::File;
+use std::io;
 use std::path::Path;
+use std::string::String;
 
-fn default_file_path() -> String {
+#[cfg(test)]
+mod vault_test {
+    use super::Vault;
+    use crate::utils::workspace;
+    use std::panic;
+
+    #[test]
+    fn test_create_vault() {
+        let _result = panic::catch_unwind(|| {
+            workspace::delete_workspace();
+        });
+        workspace::setup_workspace();
+        let v = Vault::create("vaultname", "masterPassword", "salt123545")
+            .expect("Failed creating vault!");
+        assert_eq!(v.salt, "salt123545");
+        assert_eq!(v.master_pwd, "masterPassword");
+        assert_eq!(v.file_path, "/home/salty/.salty/vaultname.slt");
+    }
+}
+
+fn file_path(name: &str) -> String {
     dirs::home_dir()
         .expect("No home directory found in your system!")
         .join(".salty/")
-        .join("vault.slt")
+        .join(name)
+        .with_extension("slt")
         .to_str()
         .expect("invalid path to config directroy!")
         .to_owned()
 }
-
+#[derive(Debug)]
 pub struct Vault {
     master_pwd: String,
     salt: String,
-    pub account: Account,
+    account: Account,
     file_path: String,
 }
 
+pub enum VaultError {
+    IoError(io::Error),
+    EncryptingError(cocoon::Error),
+    InvalidVault,
+}
+
+impl From<io::Error> for VaultError {
+    fn from(error: io::Error) -> Self {
+        VaultError::IoError(error)
+    }
+}
+
+impl From<cocoon::Error> for VaultError {
+    fn from(error: cocoon::Error) -> Self {
+        VaultError::EncryptingError(error)
+    }
+}
+
 impl Vault {
-    pub fn new<'a, 'b>(master_pwd: &'a str, salt: &'b str) -> Self {
-        let default_dir = dirs::home_dir()
-            .expect("No home directory found in your system!")
-            .join(".salty/")
-            .to_str()
-            .expect("invalid path to config directroy!")
-            .to_owned();
-
-        fs::create_dir(default_dir).ok();
-
-        Vault {
+    pub fn create<'a, 'b, 'c>(name: &'a str, master_pwd: &'b str, salt: &'c str) -> Option<Self> {
+        Some(Vault {
             master_pwd: master_pwd.to_owned(),
             salt: salt.to_owned(),
             account: Account::new(),
-            file_path: default_file_path(),
-        }
+            file_path: file_path(name),
+        })
     }
 
-    pub fn default<'a>(master_pwd: &'a str) -> Result<Self, cocoon::Error> {
-        Self::from_file(master_pwd, &default_file_path())
-    }
+    pub fn load<'a, 'b>(master_password: &'a str, name: &'b str) -> Result<Self, VaultError> {
+        let vault_path = file_path(name);
+        let path = Path::new(&vault_path);
+        path.is_file().then(|| 0).ok_or(VaultError::InvalidVault)?;
 
-    pub fn salt() -> String {
-        let salt_file = format!("{}{}", default_file_path(), ".salt");
-        fs::read_to_string(&salt_file).expect("Unable to read salt file")
-    }
-
-    pub fn from_file<'a, 'b>(
-        master_password: &'a str,
-        path: &'b str,
-    ) -> Result<Self, cocoon::Error> {
-        let mut file = File::open(&path)?;
+        let mut file = File::open(path)?;
         let metadata = file.metadata()?;
         let mut permissions = metadata.permissions();
         permissions.set_readonly(false);
@@ -64,23 +88,26 @@ impl Vault {
         let cocoon = Cocoon::new(&master_password.as_bytes());
         let encoded_data = cocoon.parse(&mut file)?;
 
+        let salt_path = path.join(".salt");
+        let mut salt_file = File::open(salt_path)?;
+        let metadata = salt_file.metadata()?;
+        let mut permissions = metadata.permissions();
+        permissions.set_readonly(false);
+
+        let cocoon = Cocoon::new(&master_password.as_bytes());
+        let salt_encoded = cocoon.parse(&mut salt_file)?;
+
         let vault = Vault {
             master_pwd: master_password.to_owned(),
-            salt: Self::salt(),
+            salt: String::from_utf8(salt_encoded).unwrap(),
             account: Account::try_from_slice(&encoded_data).unwrap(),
-            file_path: path.to_owned(),
+            file_path: file_path(name),
         };
 
         Ok(vault)
     }
 
-    pub fn exists() -> bool {
-        return Path::new(&default_file_path()).exists();
-    }
-}
-
-impl Drop for Vault {
-    fn drop(&mut self) {
+    pub fn make_persistent(&mut self) {
         let encoded_account = self.account.try_to_vec().unwrap();
 
         let salt_file = self.file_path.clone() + ".salt";

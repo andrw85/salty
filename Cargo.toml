@@ -2,5 +2,5 @@
 
 members = [
     "salty_vault",
-    "salty_cli"
+#    "salty_cli"
 ]

@@ -3,6 +3,29 @@ pub use cocoon::{Cocoon, Error};
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
+#[cfg(test)]
+mod account_test {
+    use super::{Account, AccountEntry};
+
+    #[test]
+    fn test_account_add() {
+        let mut account = Account::new();
+        let entry = AccountEntry::new("google", "andrew", "123456789");
+        let entry2 = AccountEntry::new("amazon", "andrew", "123456789");
+        let entry3 = AccountEntry::new("facebook", "andrew", "123456789");
+
+        assert!(account.add(entry).is_ok());
+        assert!(account.add(entry2).is_ok());
+        assert!(account.add(entry3).is_ok());
+        assert_eq!(account.sites.len(), 3);
+
+        let entry_already_there = AccountEntry::new("facebook", "andrew", "123456789");
+        assert!(account.add(entry_already_there).is_err());
+
+        assert_eq!(account.size(), 3);
+    }
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct Account {
     sites: HashSet<AccountEntry>,

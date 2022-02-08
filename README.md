@@ -10,6 +10,17 @@ Salty uses a key stretching algorithm call PBKDF2 with a random generated salt o
 
 Security principles for hashing: https://crackstation.net/hashing-security.htm#normalhashing
 
+# Dependencies
+
+To build locally without development environment you need:
+
+- cargo package installed
+
+Optional dependencies for development environment:
+
+- GNU make
+- Docker
+
 ## TODOS:
 
 - Change salt anytime user tries accessing the vault and he introduces a valid master password.
@@ -43,7 +54,7 @@ SUBCOMMANDS:
 
 ## How to start the development environment
 
-There is a Makefile provided that can be used to build a docker container with the development environment. 
+There is a Makefile provided that can be used to build a docker container with the development environment.
 
 To build and run it execute the following command:
 ```

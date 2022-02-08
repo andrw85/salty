@@ -18,7 +18,7 @@ fn main() {
             println!("{}", pass);
             Ok(())
         }
-        Opt::Create => vault_cli::create_vault(),
+        Opt::Create{vault_name}=> vault_cli::create_vault(&vault_name),
         Opt::Add(params) => vault_cli::add_entry(params),
         Opt::Show => vault_cli::show_entries(),
         Opt::Totp => {

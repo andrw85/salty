@@ -13,7 +13,9 @@ pub fn options() -> Opt {
 pub enum Opt {
     Generator(PasswordGenOpt),
     /// Create a vault
-    Create,
+    Create {
+        vault_name: String,
+    },
     /// Add an entry
     Add(AddOpt),
     /// Show entries
