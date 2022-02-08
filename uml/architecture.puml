@@ -1,0 +1,34 @@
+@startuml
+!theme materia-outline
+skinparam sequenceMessageAlign center
+skinparam monochrome true
+skinparam ranksep 45
+skinparam dpi 90
+skinparam arrowThickness 1
+skinparam packageTitleAlignment left
+skinparam usecaseBorderThickness 0.4
+skinparam defaultFontSize 12
+skinparam rectangleBorderThickness 1
+
+cloud "Cloud" {
+(proxy) as cloud
+}
+cloud "<b>Salty VaultDB</b>"{
+(storage)
+}
+rectangle "<b>Linux CLI Client</b>" as cli_client
+rectangle "<b>Web Client</b>" as web_cli
+rectangle "<b>IOS app</b>" as ios
+rectangle "<b>. . .</b>" as others
+
+Actor user
+user ==> cli_client
+user ==>  web_cli
+user ==> ios
+user ==> others
+cli_client <==> (cloud)
+web_cli <==> (cloud): TLS channels
+ios <==> cloud
+others <==> cloud
+(cloud) <==> (storage) : TLS channel
+@enduml

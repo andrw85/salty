@@ -3,9 +3,12 @@
 # Salty
 Salty is another open implementation of a password management system.
 
-security principles for hashing: https://crackstation.net/hashing-security.htm#normalhashing
 
 Salty uses a key stretching algorithm call PBKDF2 with a random generated salt of 63 bytes to reduce vulnerabilities of brute-force attacks. The ouput of this hashing function is also a sha256 key.
+
+![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/andrw85/salty/main/uml/architecture.puml)
+
+Security principles for hashing: https://crackstation.net/hashing-security.htm#normalhashing
 
 ## TODOS:
 
@@ -40,10 +43,15 @@ SUBCOMMANDS:
 
 ## How to start the development environment
 
-There is a Makefile that can be used to build a docker container used as development environment. To build and run it execute the following command:
+There is a Makefile provided that can be used to build a docker container with the development environment. 
+
+To build and run it execute the following command:
 ```
 $ make
-docker build --build-arg USER_ID=76119 --build-arg GROUP_ID=28563 -t salty  - < Dockerfile
+```
+The previous command will give you the following output:
+```
+docker build --build-arg USER_ID=1234 --build-arg GROUP_ID=235 -t salty  - < Dockerfile
 Sending build context to Docker daemon  2.048kB
 Step 1/9 : FROM rust:latest
  ---> 269d9943b0d3
@@ -77,11 +85,12 @@ docker run -v /home/andrew/rust/salty:/home/salty -it salty:latest
 salty@2e9dab4c671e:~$
 ```
 
-If you want to skip the docker image building phase and access the docker container CLI run:
+If you have already built the docker image previously and you want to skip the docker image building phase and access the docker container CLI run:
+
 ```
  $ make run
 ```
-You will end up with a prompt within the docker container. You can build the project by running:
+You will end up with a prompt within the docker container. You can use it to build the project by running:
 
 ```
 salty@4856ba2b491e:~$ cargo build
