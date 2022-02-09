@@ -3,29 +3,68 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use cocoon::Cocoon;
 use dirs;
 
-use std::fs;
 use std::fs::File;
 use std::io;
-use std::path::Path;
+use std::path::PathBuf;
 use std::string::String;
 
 #[cfg(test)]
 mod vault_test {
     use super::Vault;
-    use crate::utils::workspace;
+    use crate::utils::workspace::Workspace;
+    use crate::vault::account::{Account, AccountEntry};
     use std::panic;
-
     #[test]
     fn test_create_vault() {
-        let _result = panic::catch_unwind(|| {
-            workspace::delete_workspace();
+        let mut ws = Workspace::new();
+        let _result = panic::catch_unwind(move || {
+            // TODO: remove once fs::try_exist is merged in rust stable
+            ws.setup_workspace();
         });
-        workspace::setup_workspace();
+
         let v = Vault::create("vaultname", "masterPassword", "salt123545")
             .expect("Failed creating vault!");
+
         assert_eq!(v.salt, "salt123545");
         assert_eq!(v.master_pwd, "masterPassword");
-        assert_eq!(v.file_path, "/home/salty/.salty/vaultname.slt");
+        let home_dir = dirs::home_dir().unwrap().to_str().unwrap().to_owned();
+        assert_eq!(v.file_path, home_dir + "/.salty/vaultname.slt");
+    }
+
+    #[test]
+    fn test_store_in_disk_then_load_vault_from_disk() {
+        let mut ws = Workspace::new();
+        let _result = panic::catch_unwind(move || {
+            ws.setup_workspace();
+        });
+
+        {
+            let mut v = Vault::create("vaultname", "masterPassword", "salt123545")
+                .expect("Failed creating vault!");
+
+            let account = &mut v.account;
+            account
+                .add(AccountEntry::new("google", "andrew", "123456789"))
+                .unwrap();
+            account
+                .add(AccountEntry::new("amazon", "andrew", "123456789"))
+                .unwrap();
+            account
+                .add(AccountEntry::new("facebook", "andrew", "123456789"))
+                .unwrap();
+
+            assert_eq!(v.account.size(), 3);
+            v.save_to_disk();
+        }
+        {
+            let loaded_v =
+                Vault::load("masterPassword", "vaultname").expect("Failed loading vault!");
+            assert_eq!(loaded_v.salt, "salt123545");
+            assert_eq!(loaded_v.master_pwd, "masterPassword");
+            let home_dir = dirs::home_dir().unwrap().to_str().unwrap().to_owned();
+            assert_eq!(loaded_v.file_path, home_dir + "/.salty/vaultname.slt");
+            assert_eq!(loaded_v.account.size(), 3);
+        }
     }
 }
 
@@ -47,6 +86,7 @@ pub struct Vault {
     file_path: String,
 }
 
+#[derive(Debug)]
 pub enum VaultError {
     IoError(io::Error),
     EncryptingError(cocoon::Error),
@@ -77,10 +117,10 @@ impl Vault {
 
     pub fn load<'a, 'b>(master_password: &'a str, name: &'b str) -> Result<Self, VaultError> {
         let vault_path = file_path(name);
-        let path = Path::new(&vault_path);
+        let mut path = PathBuf::from(&vault_path);
         path.is_file().then(|| 0).ok_or(VaultError::InvalidVault)?;
 
-        let mut file = File::open(path)?;
+        let mut file = File::open(&path)?;
         let metadata = file.metadata()?;
         let mut permissions = metadata.permissions();
         permissions.set_readonly(false);
@@ -88,8 +128,8 @@ impl Vault {
         let cocoon = Cocoon::new(&master_password.as_bytes());
         let encoded_data = cocoon.parse(&mut file)?;
 
-        let salt_path = path.join(".salt");
-        let mut salt_file = File::open(salt_path)?;
+        path.set_extension("slt.salt");
+        let mut salt_file = File::open(path)?;
         let metadata = salt_file.metadata()?;
         let mut permissions = metadata.permissions();
         permissions.set_readonly(false);
@@ -107,14 +147,23 @@ impl Vault {
         Ok(vault)
     }
 
-    pub fn make_persistent(&mut self) {
+    pub fn save_to_disk(&self) {
+        //
+        // Save salt data in disk
+        //
+        let salt_file_path = self.file_path.clone() + ".salt";
+        let mut salt_file = File::create(&salt_file_path).expect("Could not create db file.");
+        let cocoon = Cocoon::new(&self.master_pwd.as_bytes());
+        // Dump data
+        cocoon
+            .dump(self.salt.as_bytes().to_vec(), &mut salt_file)
+            .expect("Could not dump encrpyted data into db file.");
+
+        //
+        // Save vault data in disk
+        //
         let encoded_account = self.account.try_to_vec().unwrap();
-
-        let salt_file = self.file_path.clone() + ".salt";
-        fs::write(&salt_file, self.salt.clone()).expect("Unable to write salt file");
-
         let mut file = File::create(&self.file_path).expect("Could not create db file.");
-
         let cocoon = Cocoon::new(&self.master_pwd.as_bytes());
         // Dump the serialized database into a file as an encrypted container.
         cocoon

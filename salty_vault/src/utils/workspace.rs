@@ -1,55 +1,61 @@
 use std::fs;
+use std::sync::Mutex;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serial_test::serial;
-    use std::panic;
-    #[test]
-    fn test_setting_vault_workspace() {
-        let result = panic::catch_unwind(|| {
-            delete_workspace();
-        });
-        if result.is_ok() {
-            setup_workspace();
+pub struct Workspace {
+    mutex: Mutex<std::path::PathBuf>,
+}
+
+impl Workspace {
+    pub fn new() -> Self {
+        let path = dirs::home_dir()
+            .expect("No home directory found in your system!")
+            .join(".salty/");
+
+        Workspace {
+            mutex: Mutex::new(path),
         }
     }
-    #[test]
-    #[should_panic(expected = "Could not remove salty home folder!")]
-    fn test_deleting_vault_workspace() {
-        delete_workspace();
-        delete_workspace();
+
+    pub fn setup_workspace(&mut self) {
+        let default_dir = self.mutex.lock().unwrap();
+        fs::create_dir(default_dir.as_path()).expect("Could not create salty home folder!");
     }
 
-    #[test]
-    #[should_panic(expected = "Could not create salty home folder!")]
-    #[serial]
-    fn test_vault_workspace_already_exists() {
-        let _result = panic::catch_unwind(|| {
-            delete_workspace();
-        });
-        setup_workspace();
-        setup_workspace();
+    pub fn delete_workspace(&mut self) {
+        let default_dir = self.mutex.lock().unwrap();
+        fs::remove_dir_all(default_dir.as_path()).expect("Could not remove salty home folder!");
     }
 }
 
-pub fn setup_workspace() {
-    let default_dir = dirs::home_dir()
-        .expect("No home directory found in your system!")
-        .join(".salty/")
-        .to_str()
-        .expect("invalid path to config directroy!")
-        .to_owned();
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    fs::create_dir(default_dir).expect("Could not create salty home folder!");
-}
+//     #[test]
+//     fn test_setting_vault_workspace() {
+//         let file_path = dirs::home_dir().expect("No home directory").join(".salty/");
+//         let mut space = Workspace::new();
 
-pub fn delete_workspace() {
-    let default_dir = dirs::home_dir()
-        .expect("No home directory found in your system!")
-        .join(".salty/")
-        .to_str()
-        .expect("invalid path to config directroy!")
-        .to_owned();
-    fs::remove_dir_all(default_dir).expect("Could not remove salty home folder!");
-}
+//         println!("checking if path ");
+//         if file_path.is_dir() {
+//             println!("file path exists");
+//             space.delete_workspace();
+//         }
+
+//         space.setup_workspace();
+//     }
+//     #[test]
+//     #[should_panic]
+//     fn test_deleting_vault_workspace() {
+//         let file_path = dirs::home_dir().expect("No home directory").join(".salty/");
+//         let mut space = Workspace::new();
+
+//         println!("checking if path 2222 ");
+//         if file_path.is_dir() {
+//             println!("file path exists 2222");
+//             space.delete_workspace();
+//         }
+
+//         space.delete_workspace();
+//     }
+// }

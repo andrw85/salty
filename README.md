@@ -3,14 +3,87 @@
 # Salty
 Salty is another open implementation of a password management system.
 
-
-Salty uses a key stretching algorithm call PBKDF2 with a random generated salt of 63 bytes to reduce vulnerabilities of brute-force attacks. The ouput of this hashing function is also a sha256 key.
+The connection between the client and the vault server is encrypted using an TLS channel, this avoids the risk of a man in the middle attack.
+The Client side produces a hash salted with a site-specific string and it is then sent on an encrypted channel to the server. On the server it is one more time hashed and salted with a random generated salt, stored on the server. Salty uses a key stretching algorithm call PBKDF2 with a random generated salt of 63 bytes to reduce vulnerabilities of brute-force attacks. The ouput of this hashing function is also a sha256 key.
 
 ![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/andrw85/salty/main/uml/architecture.puml)
 
 Security principles for hashing: https://crackstation.net/hashing-security.htm#normalhashing
 
-# Dependencies
+
+## Example of intended usage on CLI client(not implemented yet):
+```
+$ salty login andrew
+Insert master password: *******************
+Error: Account or password invalid!
+
+$ salty create andrew
+Insert master password: ********************
+verify master password: ********************
+Account created, you are now logged in!
+
+$ salty addentry
+Insert title for the entry: www.gmail.com
+Insert User name: andrew@gmail.com
+Insert password: ********
+Entry inserted!
+
+$ date
+Wed 09 Feb 2022 07:29:47 PM CET
+
+$ date # after 1 min
+Wed 09 Feb 2022 07:30:47 PM CET
+
+$ salty show
+You are not logged in!
+
+$ salty addentry
+You are not logged in!
+
+$ salty login andrew
+Insert master password: ********************
+Logged in!
+
+$ salty addentry
+Insert title for the entry: www.mail.de
+Insert User name: andrew@mail.de
+Insert password: ********
+Entry inserted!
+
+$ salty show 
+Displaying contents in the vault (passwords hidden by default).
+{
+	{
+		"title": "www.gmail.com"
+		"user": "andrew@gmail.com"
+		"password": "*********"
+	},
+	{
+		"title": "www.mail.de"
+		"user": "andrew@mail.de"
+		"password": "**********"
+	},
+}
+
+$ salty show --all
+Displaying contents in the vault including passwords.
+{
+	{
+		"title": "www.gmail.com"
+		"user": "andrew@gmail.com"
+		"password": "12345678"
+	},
+	{
+		"title": "www.mail.de"
+		"user": "andrew@mail.de"
+		"password": "myCoolPassword"
+	}
+}
+
+
+```
+
+## Dependencies
 
 To build locally without development environment you need:
 
@@ -22,8 +95,6 @@ Optional dependencies for development environment:
 - Docker
 
 ## TODOS:
-
-- Change salt anytime user tries accessing the vault and he introduces a valid master password.
 
 - Continue creating the web client using egui-eframe.
 
