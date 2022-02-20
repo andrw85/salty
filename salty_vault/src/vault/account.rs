@@ -1,5 +1,7 @@
-use crate::utils::{Cipherble, FastCipher, SlowCipher};
+use crate::utils::Cipher;
 use borsh::{BorshDeserialize, BorshSerialize};
+use derivative::Derivative;
+use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::string::String;
@@ -9,7 +11,7 @@ mod account_test {
     use super::*;
     #[test]
     fn test_account_add() {
-        let mut account = Account::empty();
+        let mut account = Account::empty(Cipher::Fast);
         let entry = AccountEntry::new("google", "andrew", "123456789");
         let entry2 = AccountEntry::new("amazon", "andrew", "123456789");
         let entry3 = AccountEntry::new("facebook", "andrew", "123456789");
@@ -26,7 +28,7 @@ mod account_test {
     }
 
     #[test]
-    fn test_account_new() {
+    fn test_account_password_encryption() {
         let plain_pwd = "my plain password".to_string();
         // use a FastCipher to speed up the test
         let mut account = Account::create_with_fast_cipher("my_account", &plain_pwd[..]);
@@ -39,7 +41,7 @@ mod account_test {
         assert_eq!(account.password().len(), 77);
 
         // check the result of unencrypting the password should be equal to plain password
-        let cocoon = FastCipher::new(&plain_pwd);
+        let cocoon = Cipher::Fast.new(&plain_pwd);
         let unencrypted_pwd = cocoon.unwrap(account.password()).unwrap();
         assert_eq!(unencrypted_pwd.len(), plain_pwd.len());
         assert_eq!(&unencrypted_pwd[..], plain_pwd.as_bytes());
@@ -56,23 +58,34 @@ mod account_test {
 pub trait Vault {
     fn name(&self) -> &str;
     fn password(&self) -> &[u8];
+    fn cipher(&self) -> &Cipher;
+    fn salt(&self) -> &[u8; 32];
 }
 
-impl<T> Vault for Account<T> {
+impl Vault for Account {
     fn name(&self) -> &str {
         &self.name
     }
     fn password(&self) -> &[u8] {
         &self.master_pwd[..]
     }
+    fn cipher(&self) -> &Cipher {
+        &self.cipher
+    }
+    fn salt(&self) -> &[u8; 32] {
+        &self.seed
+    }
 }
-
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
-pub struct Account<T> {
+#[derive(Derivative, BorshSerialize, BorshDeserialize, Clone, Debug)]
+#[derivative(PartialEq)]
+pub struct Account {
     records: HashSet<AccountEntry>,
     name: String,
     master_pwd: Vec<u8>,
-    cipher: T,
+    cipher: Cipher,
+    #[borsh_skip]
+    #[derivative(PartialEq = "ignore")]
+    seed: [u8; 32],
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Hash, Eq, PartialEq, PartialOrd, Clone, Debug)]
@@ -98,10 +111,7 @@ impl Ord for AccountEntry {
     }
 }
 
-impl<T> Account<T>
-where
-    T: Cipherble,
-{
+impl Account {
     // public members
 
     pub fn size(&self) -> usize {
@@ -122,51 +132,44 @@ where
         }
         self.records.insert(entry);
     }
-}
 
-impl Account<SlowCipher> {
     pub fn default<S: Into<String>>(name: S, pwd: S) -> Self {
-        Self::create_with_slow_cipher(name.into(), pwd.into())
+        Account::create(Cipher::Slow, name, pwd, None)
     }
 
-    pub fn empty() -> Self {
+    pub fn empty(cipher: Cipher) -> Self {
         Account {
             records: HashSet::new(),
             name: String::from(""),
             master_pwd: vec![0; 0],
-            cipher: SlowCipher,
+            cipher: cipher,
+            seed: [0u8; 32],
         }
     }
 
-    fn create_with_slow_cipher<S: Into<String>>(name: S, pwd: S) -> Self {
-        let password = pwd.into();
-        let cocoon = SlowCipher::new(&password);
-        let pwd_encrypted = cocoon
-            .wrap(password.as_bytes())
-            .expect("Failed encrypting password!");
-
-        Account {
-            records: HashSet::new(),
-            name: name.into(),
-            master_pwd: pwd_encrypted,
-            cipher: SlowCipher,
-        }
-    }
-}
-
-impl Account<FastCipher> {
+    // Warning: use this function only for unit tests
     pub fn create_with_fast_cipher<S: Into<String>>(name: S, pwd: S) -> Self {
+        Account::create(Cipher::Fast, name, pwd, Some([5u8; 32]))
+    }
+
+    fn create<S: Into<String>>(cipher: Cipher, name: S, pwd: S, seed: Option<[u8; 32]>) -> Self {
         let password = pwd.into();
-        let cocoon = FastCipher::new(&password);
-        let pwd_encrypted = cocoon
-            .wrap(password.as_bytes())
-            .expect("Failed encrypting password!");
+
+        // Seed can be obtained by any cryptographically secure random generator.
+        // ThreadRng is used just for example.
+
+        let new_seed: [u8; 32] = seed.unwrap_or(rand::thread_rng().gen::<[u8; 32]>());
+        // let seed = [2u8; 32];
+
+        let cocoon = cipher.with_seed(password.as_bytes(), new_seed);
+        let pwd_encrypted = cocoon.wrap(password.as_bytes()).unwrap();
 
         Account {
             records: HashSet::new(),
             name: name.into(),
             master_pwd: pwd_encrypted,
-            cipher: FastCipher,
+            cipher: cipher,
+            seed: new_seed,
         }
     }
 }

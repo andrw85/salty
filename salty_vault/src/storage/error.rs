@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum StorageError {
     Cocoon,
+    NoSaltFile,
 }
 
 impl fmt::Display for StorageError {

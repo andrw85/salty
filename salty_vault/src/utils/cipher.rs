@@ -1,31 +1,29 @@
+use borsh::{BorshDeserialize, BorshSerialize};
 use cocoon::Cocoon;
 
-pub trait Cipherble {
-    fn new<'a>(pwd: &'a String) -> Cocoon<'a, cocoon::Creation>;
-    fn from_bytes<'a>(pwd: &'a [u8]) -> Cocoon<'a, cocoon::Creation>;
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+pub enum Cipher {
+    Fast,
+    Slow,
 }
 
-#[derive(Default)]
-pub struct FastCipher;
-impl FastCipher {}
-impl Cipherble for FastCipher {
-    fn new<'a>(pwd: &'a String) -> Cocoon<'a, cocoon::Creation> {
-        Cocoon::new(pwd.as_bytes()).with_weak_kdf()
+impl Cipher {
+    pub fn new<'a>(&self, pwd: &'a String) -> Cocoon<'a, cocoon::Creation> {
+        match self {
+            Cipher::Fast => Cocoon::new(pwd.as_bytes()).with_weak_kdf(),
+            Cipher::Slow => Cocoon::new(pwd.as_bytes()),
+        }
     }
-    fn from_bytes<'a>(pwd: &'a [u8]) -> Cocoon<'a, cocoon::Creation> {
-        Cocoon::new(pwd).with_weak_kdf()
+    pub fn from_bytes<'a>(&self, pwd: &'a [u8]) -> Cocoon<'a, cocoon::Creation> {
+        match self {
+            Cipher::Fast => Cocoon::new(pwd).with_weak_kdf(),
+            Cipher::Slow => Cocoon::new(pwd),
+        }
     }
-}
-
-#[derive(Default)]
-pub struct SlowCipher;
-impl SlowCipher {}
-
-impl Cipherble for SlowCipher {
-    fn new<'a>(pwd: &'a String) -> Cocoon<'a, cocoon::Creation> {
-        Cocoon::new(pwd.as_bytes())
-    }
-    fn from_bytes<'a>(pwd: &'a [u8]) -> Cocoon<'a, cocoon::Creation> {
-        Cocoon::new(pwd)
+    pub fn with_seed<'a>(&self, pwd: &'a [u8], seed: [u8; 32]) -> Cocoon<'a, cocoon::Creation> {
+        match self {
+            Cipher::Fast => Cocoon::from_seed(pwd, seed).with_weak_kdf(),
+            Cipher::Slow => Cocoon::from_seed(pwd, seed),
+        }
     }
 }
