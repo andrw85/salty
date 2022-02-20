@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package salty;
+
+// The Vault service definition.
+service Vault {
+  // Sends a Command to the Vault server.
+  rpc send (CommandRequest) returns (CommandResponse) {}
+}
+
+
+message CommandRequest {
+  string command = 1;
+}
+
+
+message CommandResponse {
+  string message = 1;
+}

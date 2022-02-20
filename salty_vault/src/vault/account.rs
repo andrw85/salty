@@ -147,6 +147,7 @@ impl Account {
         }
     }
 
+    #[cfg(debug_assertions)]
     // Warning: use this function only for unit tests
     pub fn create_with_fast_cipher<S: Into<String>>(name: S, pwd: S) -> Self {
         Account::create(Cipher::Fast, name, pwd, Some([5u8; 32]))
