@@ -27,8 +27,8 @@ impl MyVault {
                     break;
                 }
             }
-            sender.send(1).await;
-            sender.closed();
+            sender.send(1).await.unwrap();
+            sender.closed().await;
             println!("Stoping VaultServer!");
         })
     }
