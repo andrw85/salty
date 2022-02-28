@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), config.port);
 
     let (tx, mut rx) = mpsc::channel(32);
-    let vault = service::MyVault::new(tx.clone(), config);
+    let vault = service::VaultService::new(tx.clone(), config);
 
     task::spawn(async move {
         println!("VaultServer listening on {}", addr);

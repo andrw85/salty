@@ -14,16 +14,16 @@ pub use salty::{
 };
 
 #[cfg(test)]
-mod tests_vault_server {
-    use super::{Config, MyVault};
+mod tests_vault_service {
+    use super::{Config, VaultService};
     use std::time::{Duration, Instant};
     use tokio::{self, sync::mpsc};
 
-    async fn set_up(shutdown_timeout: u64) -> (MyVault, mpsc::Receiver<i32>) {
+    async fn set_up(shutdown_timeout: u64) -> (VaultService, mpsc::Receiver<i32>) {
         let (tx, rx) = mpsc::channel(32);
         let mut config = Config::default();
         config.shutdown_timeout = shutdown_timeout;
-        (MyVault::new(tx.clone(), config), rx)
+        (VaultService::new(tx.clone(), config), rx)
     }
 
     async fn tear_down(mut rx: mpsc::Receiver<i32>) {
@@ -53,19 +53,19 @@ mod tests_vault_server {
     }
 }
 
-pub struct MyVault {
+pub struct VaultService {
     sender: mpsc::Sender<i32>,
     timer_handler: Arc<Mutex<tokio::task::JoinHandle<()>>>,
     config: Config,
 }
 
-impl Drop for MyVault {
+impl Drop for VaultService {
     fn drop(&mut self) {
-        println!("MyVault stopped!");
+        println!("VaultService stopped!");
     }
 }
 
-impl MyVault {
+impl VaultService {
     fn schedule_shutdown(
         sender: mpsc::Sender<i32>,
         shutdown_timeout: u64,
@@ -86,14 +86,14 @@ impl MyVault {
     fn reset_shutdown(&self) {
         drop(self.timer_handler.lock());
         *self.timer_handler.lock().unwrap() =
-            MyVault::schedule_shutdown(self.sender.clone(), self.config.shutdown_timeout);
+            VaultService::schedule_shutdown(self.sender.clone(), self.config.shutdown_timeout);
     }
     pub fn new(sender: mpsc::Sender<i32>, config: Config) -> Self {
-        let timer = Arc::new(Mutex::new(MyVault::schedule_shutdown(
+        let timer = Arc::new(Mutex::new(VaultService::schedule_shutdown(
             sender.clone(),
             config.shutdown_timeout,
         )));
-        let vault = MyVault {
+        let vault = VaultService {
             sender: sender,
             timer_handler: timer,
             config: config,
@@ -103,7 +103,7 @@ impl MyVault {
 }
 
 #[tonic::async_trait]
-impl Vault for MyVault {
+impl Vault for VaultService {
     async fn send(
         &self,
         request: Request<CommandRequest>,
