@@ -1,9 +1,9 @@
 [package]
-name = "salty_vault"
+name = "salty-utils"
 version = "0.1.0"
 edition = "2018"
 authors = ["Andrew O'Doherty <andrew.olv@gmail.com>"]
-description = "Salty is an open implementation of a password management system."
+description = "This crate is used as framework for building other components of the salty system."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -33,17 +33,3 @@ serde = "1.0.125"
 
 rand = "0.8.5"
 derivative = "2.2.0"
-
-tonic = "0.6.2"
-prost = "0.9.0"
-tokio = { version = "1.17.0", features = ["full"] }
-tokio-util = { version = "0.7.0", features = ["time"] }
-futures = "0.3.21"
-clap = { version = "3.1.2", features = ["derive"] }
-
-[[bin]]
-name = "daemon"
-path = "src/bin/service/main.rs"
-
-[build-dependencies]
-tonic-build = "0.6.2"

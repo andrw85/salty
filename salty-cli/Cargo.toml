@@ -1,9 +1,9 @@
 [package]
-name = "salty"
+name = "salty-cli"
 version = "0.1.0"
 edition = "2018"
 authors = ["Andrew O'Doherty <andrew.olv@gmail.com>"]
-description = "Salty is an open implementation of a password management system."
+description = "salty-cli is a crate that provides a multiplatform CLI based client for accessing a Salty service vault."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -14,4 +14,4 @@ question = "0.2.2"
 # encrypted file
 cocoon = "0.3.0"
 
-salty_vault = { path = "../salty_vault" }
+salty_vault = { path = "../salty-utils" }

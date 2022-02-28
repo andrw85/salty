@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
-    "salty_vault",
-#    "salty_cli"
+    "salty-utils",
+    "salty-service",
+    #    "cli"
 ]

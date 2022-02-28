@@ -1,4 +1,4 @@
-use crate::utils::Cipher;
+use crate::security::Cipher;
 use borsh::{BorshDeserialize, BorshSerialize};
 use derivative::Derivative;
 use rand::Rng;
