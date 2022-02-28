@@ -1,3 +1,4 @@
+use crate::cmd_processor::CmdProcessor;
 use crate::config::Config;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -15,7 +16,8 @@ pub use salty::{
 
 #[cfg(test)]
 mod tests_vault_service {
-    use super::{Config, VaultService};
+    use super::VaultService;
+    use crate::config::{Config, Testing};
     use std::time::{Duration, Instant};
     use tokio::{self, sync::mpsc};
 
@@ -57,6 +59,7 @@ pub struct VaultService {
     sender: mpsc::Sender<i32>,
     timer_handler: Arc<Mutex<tokio::task::JoinHandle<()>>>,
     config: Config,
+    processor: CmdProcessor,
 }
 
 impl Drop for VaultService {
@@ -94,9 +97,10 @@ impl VaultService {
             config.shutdown_timeout,
         )));
         let vault = VaultService {
+            processor: CmdProcessor::default(&config),
+            config: config,
             sender: sender,
             timer_handler: timer,
-            config: config,
         };
         vault
     }
@@ -104,12 +108,14 @@ impl VaultService {
 
 #[tonic::async_trait]
 impl Vault for VaultService {
-    async fn send(
+    async fn process_cmd(
         &self,
         request: Request<CommandRequest>,
     ) -> Result<Response<CommandResponse>, Status> {
         println!("Got a request from {:?}", request.remote_addr());
         self.reset_shutdown();
+        self.processor.handle_request(request.get_ref());
+
         let reply = salty::CommandResponse {
             message: format!("response sent!"),
         };

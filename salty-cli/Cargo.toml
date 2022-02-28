@@ -14,4 +14,4 @@ question = "0.2.2"
 # encrypted file
 cocoon = "0.3.0"
 
-salty_vault = { path = "../salty-utils" }
+salty-utils = { path = "../salty-utils" }

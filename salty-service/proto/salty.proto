@@ -5,7 +5,7 @@ package salty;
 // The Vault service definition.
 service Vault {
   // Sends a Command to the Vault server.
-  rpc send (CommandRequest) returns (CommandResponse) {}
+  rpc process_cmd (CommandRequest) returns (CommandResponse) {}
 }
 
 

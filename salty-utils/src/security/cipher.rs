@@ -6,6 +6,11 @@ pub enum Cipher {
     Fast,
     Slow,
 }
+impl Default for Cipher {
+    fn default() -> Self {
+        Cipher::Slow
+    }
+}
 
 impl Cipher {
     pub fn new<'a>(&self, pwd: &'a String) -> Cocoon<'a, cocoon::Creation> {
