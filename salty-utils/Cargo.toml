@@ -29,7 +29,10 @@ boringauth = "0.9.0"
 anyhow = "1.0.44"
 
 dirs = "4.0.0"
-serde = "1.0.125"
+serde = "1.0.136"
+
 
 rand = "0.8.5"
 derivative = "2.2.0"
+
+structopt = "0.3.26"

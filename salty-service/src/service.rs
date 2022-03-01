@@ -3,12 +3,12 @@ use crate::config::Config;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::{self, sync::mpsc, task};
+
 pub use tonic::{Request, Response, Status};
 pub mod salty {
     tonic::include_proto!("salty");
 }
-use salty::CommandResponse;
-
+pub use salty::CommandResponse;
 pub use salty::{
     vault_server::{Vault, VaultServer},
     CommandRequest,
@@ -114,11 +114,7 @@ impl Vault for VaultService {
     ) -> Result<Response<CommandResponse>, Status> {
         println!("Got a request from {:?}", request.remote_addr());
         self.reset_shutdown();
-        self.processor.handle_request(request.get_ref());
-
-        let reply = salty::CommandResponse {
-            message: format!("response sent!"),
-        };
+        let reply = self.processor.handle(request.get_ref());
         Ok(Response::new(reply))
     }
 }

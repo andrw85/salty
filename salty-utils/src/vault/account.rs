@@ -9,6 +9,14 @@ use std::string::String;
 #[cfg(test)]
 mod account_test {
     use super::*;
+
+    impl Account {
+        // Warning: use this function only for unit tests
+        pub fn create_with_fast_cipher<S: Into<String>>(name: S, pwd: S) -> Self {
+            Account::create(Cipher::Fast, name, pwd, Some([5u8; 32]))
+        }
+    }
+
     #[test]
     fn test_account_add() {
         let mut account = Account::empty(Cipher::Fast);
@@ -145,12 +153,6 @@ impl Account {
             cipher: cipher,
             seed: [0u8; 32],
         }
-    }
-
-    #[cfg(debug_assertions)]
-    // Warning: use this function only for unit tests
-    pub fn create_with_fast_cipher<S: Into<String>>(name: S, pwd: S) -> Self {
-        Account::create(Cipher::Fast, name, pwd, Some([5u8; 32]))
     }
 
     fn create<S: Into<String>>(cipher: Cipher, name: S, pwd: S, seed: Option<[u8; 32]>) -> Self {

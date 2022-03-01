@@ -1,3 +1,4 @@
 mod account;
-// pub mod vault;
+pub mod commands;
+
 pub use account::{Account, AccountEntry, Vault};

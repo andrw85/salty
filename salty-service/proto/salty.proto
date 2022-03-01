@@ -8,11 +8,9 @@ service Vault {
   rpc process_cmd (CommandRequest) returns (CommandResponse) {}
 }
 
-
 message CommandRequest {
   string command = 1;
 }
-
 
 message CommandResponse {
   string message = 1;
