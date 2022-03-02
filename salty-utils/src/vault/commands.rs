@@ -1,28 +1,40 @@
+pub use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::env;
-pub use structopt::StructOpt;
 
 /// Salty  is an open implementation of a password management system.
-#[derive(Serialize, Deserialize, StructOpt, Debug)]
-#[structopt(name = env!("CARGO_PKG_NAME"))]
-#[structopt(version = env!("CARGO_PKG_VERSION"))]
-#[structopt(about = env!("CARGO_PKG_DESCRIPTION"))]
-#[structopt(author = env!("CARGO_PKG_AUTHORS"))]
+#[derive(Serialize, Deserialize, Debug, Parser)]
+#[clap(author, version, about, long_about = None)]
 pub enum Cmd {
     /// Create a vault
-    Create { vault_name: String },
+    Create(CreateCmd),
     /// Login to a vault
-    Login { vault_name: String },
+    Login(LoginCmd),
     /// Add an entry
-    Add(AddOpt),
+    Add(AddCmd),
     /// Show entries
-    Show,
+    Show(ShowCmd),
 }
 
-#[derive(StructOpt, Debug, Serialize, Deserialize)]
-pub struct AddOpt {
+#[derive(Parser, Debug, Serialize, Deserialize)]
+pub struct CreateCmd {
+    #[structopt(short, long, required = true)]
+    pub vault_name: String,
+}
+
+#[derive(Parser, Debug, Serialize, Deserialize)]
+pub struct LoginCmd {
+    #[structopt(short, long, required = true)]
+    pub vault_name: String,
+}
+
+#[derive(Parser, Debug, Serialize, Deserialize)]
+pub struct AddCmd {
     #[structopt(short, long, required = true)]
     pub site: String,
     #[structopt(short, long, required = true)]
     pub user: String,
 }
+
+#[derive(Parser, Debug, Serialize, Deserialize)]
+pub struct ShowCmd {}
