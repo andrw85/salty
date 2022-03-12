@@ -1,5 +1,8 @@
 use super::StorageError;
-use crate::vault::{Account, Vault};
+use crate::{
+    logs::debug,
+    vault::{Account, Vault},
+};
 use borsh::{BorshDeserialize, BorshSerialize};
 use dirs;
 use std::convert::TryFrom;
@@ -36,6 +39,7 @@ where
     Self: BorshSerialize + BorshDeserialize + Vault,
 {
     fn store_to_disk(&self) -> Result<(), StorageError> {
+        logs::debug!("Starting process for storing account in disk...");
         let file_path = file_path(self.name());
 
         //
@@ -53,6 +57,8 @@ where
         // save the seed in disk:
         fs::write(file_path.to_string() + ".salt", self.salt())?;
 
+        logs::debug!("Wrote salt to disk...");
+
         // Dump the serialized database into a file as an encrypted container.
         let encoded_account = self.try_to_vec().unwrap();
         cocoon
@@ -60,22 +66,39 @@ where
             .expect("Could not dump encrpyted data into db file.");
 
         permissions.set_readonly(true);
+
+        logs::debug!("Wrote account to disk...");
+
         Ok(())
     }
 
     fn load_from_disk<'a, 'b>(&mut self) -> Result<(), StorageError> {
+        debug!(format!(
+            "Checking account {} exists in disk before loading...",
+            self.name()
+        ));
         let vault_path = file_path(self.name());
         let path = PathBuf::from(&vault_path);
-        path.is_file().then(|| 0).ok_or(StorageError::Cocoon)?;
+        path.is_file()
+            .then(|| 0)
+            .ok_or(StorageError::NoAccountFile)?;
 
-        let salt_bytes = fs::read(vault_path.to_string() + ".salt").expect("Failed to read salt!");
+        logs::debug!("Loading salt from disk...", vault_path);
+        let salt_path = PathBuf::from(vault_path.to_string() + ".salt");
+        salt_path
+            .is_file()
+            .then(|| 0)
+            .ok_or(StorageError::NoSaltFile)?;
+        let salt_bytes = fs::read(salt_path).ok().ok_or(StorageError::ReadingSalt)?;
         let salt: [u8; 32] = <[u8; 32]>::try_from(salt_bytes).unwrap();
 
+        logs::debug!("Salt Loaded. Loadind account...");
         let mut file = File::open(&path)?;
         let cocoon = self.cipher().with_seed(&self.password(), salt);
-        let encoded_data = cocoon.parse(&mut file)?;
+        let encoded_data = cocoon.parse(&mut file).ok().ok_or(StorageError::Cocoon)?;
 
         *self = Self::try_from_slice(&encoded_data).unwrap();
+        logs::debug!("Account loaded!");
         Ok(())
     }
 }

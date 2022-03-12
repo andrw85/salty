@@ -1,5 +1,6 @@
+use crate::storage;
 pub use clap::Parser;
-use serde::{Deserialize, Serialize};
+pub use serde::{Deserialize, Serialize};
 use std::env;
 
 /// Salty  is an open implementation of a password management system.
@@ -20,12 +21,16 @@ pub enum Cmd {
 pub struct CreateCmd {
     #[structopt(short, long, required = true)]
     pub vault_name: String,
+    #[structopt(short, long, required = true)]
+    pub password: String,
 }
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct LoginCmd {
     #[structopt(short, long, required = true)]
     pub vault_name: String,
+    #[structopt(short, long, required = true)]
+    pub password: String,
 }
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
@@ -38,3 +43,16 @@ pub struct AddCmd {
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct ShowCmd {}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CmdErrorCode {
+    Ok,
+    StorageBackendError,
+    AccountAlreadyExists,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CmdResponse {
+    pub result: CmdErrorCode,
+    pub message: String, // used only when error code is not CmdErrorCode::Ok
+}

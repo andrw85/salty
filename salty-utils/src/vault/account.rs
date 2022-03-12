@@ -1,6 +1,7 @@
 use crate::security::Cipher;
 use borsh::{BorshDeserialize, BorshSerialize};
 use derivative::Derivative;
+use logs;
 use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -166,7 +167,6 @@ impl Account {
 
         let cocoon = cipher.with_seed(password.as_bytes(), new_seed);
         let pwd_encrypted = cocoon.wrap(password.as_bytes()).unwrap();
-
         Account {
             records: HashSet::new(),
             name: name.into(),

@@ -13,6 +13,7 @@ pub use salty::{
     vault_server::{Vault, VaultServer},
     CommandRequest,
 };
+use salty_utils::logs;
 
 #[cfg(test)]
 mod tests_vault_service {
@@ -64,7 +65,7 @@ pub struct VaultService {
 
 impl Drop for VaultService {
     fn drop(&mut self) {
-        println!("VaultService stopped!");
+        logs::info!("VaultService stopped!");
     }
 }
 
@@ -83,18 +84,20 @@ impl VaultService {
             }
             sender.send(1).await.unwrap();
             sender.closed().await;
-            println!("Stoping VaultServer!");
+            logs::info!("Stoping VaultServer!");
         })
     }
     fn reset_shutdown(&self) {
-        drop(self.timer_handler.lock());
-        *self.timer_handler.lock().unwrap() =
-            VaultService::schedule_shutdown(self.sender.clone(), self.config.shutdown_timeout);
+        self.timer_handler.lock().unwrap().abort();
+        *self.timer_handler.lock().unwrap() = VaultService::schedule_shutdown(
+            self.sender.clone(),
+            self.config.shutdown_timeout * 1000,
+        );
     }
     pub fn new(sender: mpsc::Sender<i32>, config: Config) -> Self {
         let timer = Arc::new(Mutex::new(VaultService::schedule_shutdown(
             sender.clone(),
-            config.shutdown_timeout,
+            config.shutdown_timeout * 1000,
         )));
         let vault = VaultService {
             processor: CmdProcessor::default(&config),
@@ -112,7 +115,7 @@ impl Vault for VaultService {
         &self,
         request: Request<CommandRequest>,
     ) -> Result<Response<CommandResponse>, Status> {
-        println!("Got a request from {:?}", request.remote_addr());
+        logs::info!("Got a request from {:?}", request.remote_addr());
         self.reset_shutdown();
         let reply = self.processor.handle(request.get_ref());
         Ok(Response::new(reply))

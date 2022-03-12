@@ -1,39 +1,41 @@
-pub mod generator;
-pub mod options;
-pub mod vault_cli;
+use salty::{vault_client::VaultClient, CommandRequest};
+use salty_utils::vault::commands::{Cmd, CmdErrorCode, CmdResponse, Parser};
+use serde_json::{self};
+pub mod salty {
+    tonic::include_proto!("salty");
+}
 
-pub use generator::{random_password, RandomPassword};
-pub use options::{options, AddOpt, FlagsOpt, ManagerOpt, Opt, PasswordGenOpt};
-use std::process;
-pub use vault_cli::add_entry;
-
-use salty_vault::utils::authenticator::Authenticator;
-
-fn main() {
-    let opt = options::options();
-    let result: Result<(), String> = match opt {
-        Opt::Generator(params) => {
-            let pass =
-                generator::random_password(params).expect("Failed to generate random password");
-            println!("{}", pass);
-            Ok(())
-        }
-        Opt::Create{vault_name}=> vault_cli::create_vault(&vault_name),
-        Opt::Add(params) => vault_cli::add_entry(params),
-        Opt::Show => vault_cli::show_entries(),
-        Opt::Totp => {
-            Authenticator::new().validate_code();
-            Ok(())
-        }
-        Opt::None => {
-            // println!("Default vault in ~/.salty/");
-            // vault_cli::show_entries()
-            Ok(())
+#[tokio::main]
+async fn main() {
+    let args = Cmd::parse();
+    let result = VaultClient::connect("http://[::1]:50051").await;
+    let mut client = match result {
+        Ok(client) => client,
+        Err(_) => {
+            eprintln!("Error: Failed connecting to server!");
+            return;
         }
     };
 
-    if let Err(msg) = result {
-        eprintln!("{}", msg);
-        process::exit(1);
-    }
+    let request = tonic::Request::new(CommandRequest {
+        command: serde_json::to_string(&args).unwrap(),
+    });
+
+    let result = client.process_cmd(request).await;
+    let response = match result {
+        Ok(response) => response,
+        Err(e) => {
+            eprintln!("Error: {}, message: {}", e.code(), e.message().to_string());
+            return;
+        }
+    };
+    let rp: CmdResponse = serde_json::from_str(&response.get_ref().message).unwrap();
+
+    match rp.result {
+        CmdErrorCode::Ok => println!("{}", rp.message),
+        _ => {
+            eprintln!("Error: {}", rp.message);
+            return;
+        }
+    };
 }

@@ -1,7 +1,9 @@
 use crate::config::Config;
 use crate::service::{CommandRequest, CommandResponse};
 use salty_utils::{
-    vault::commands::{AddCmd, Cmd, CreateCmd, LoginCmd, ShowCmd},
+    logs,
+    storage::{HardDiskStorage, StorageError},
+    vault::commands::{AddCmd, Cmd, CmdErrorCode, CmdResponse, CreateCmd, LoginCmd, ShowCmd},
     vault::Account,
 };
 use std::sync::{Arc, Mutex};
@@ -9,6 +11,9 @@ use std::sync::{Arc, Mutex};
 pub struct CmdProcessor {
     vault: Arc<Mutex<Account>>,
 }
+
+type GrpcCommandRp = CommandResponse;
+type VaultCmdResponse = CmdResponse;
 
 #[cfg(test)]
 mod tests_cmd_processor {
@@ -39,46 +44,92 @@ impl CmdProcessor {
         }
     }
 
-    pub fn handle(&self, _req: &CommandRequest) -> CommandResponse {
+    pub fn handle(&self, _req: &CommandRequest) -> GrpcCommandRp {
         let cmd: Cmd = serde_json::from_str(&_req.command).unwrap();
-        self.handle_helper(cmd)
+        logs::debug!("CmdProcessor received command request", cmd);
+        let response = self.handle_helper(cmd);
+        logs::debug!("CmdProcessor returning response", response);
+        response
     }
-    fn handle_helper(&self, cmd: Cmd) -> CommandResponse {
+    fn handle_helper(&self, cmd: Cmd) -> GrpcCommandRp {
         let account = &mut *self.vault.lock().unwrap();
-        let message = match cmd {
+
+        let rp: VaultCmdResponse = match cmd {
             Cmd::Create(c) => c.execute(account),
             Cmd::Login(c) => c.execute(account),
             Cmd::Add(c) => c.execute(account),
             Cmd::Show(c) => c.execute(account),
         };
-        CommandResponse { message: message }
+        GrpcCommandRp {
+            message: serde_json::to_string(&rp).unwrap(),
+        }
     }
 }
 
 trait Executor {
-    fn execute(&self, account: &mut Account) -> String;
+    fn execute(&self, account: &mut Account) -> VaultCmdResponse;
 }
 
 impl Executor for CreateCmd {
-    fn execute(&self, _account: &mut Account) -> String {
-        unimplemented!("")
+    fn execute(&self, account: &mut Account) -> VaultCmdResponse {
+        *account = Account::default(self.vault_name.to_owned(), self.password.to_owned());
+        match account.load_from_disk() {
+            Err(StorageError::NoAccountFile) => {
+                // failed loading because no account with same name, create one
+                account.store_to_disk();
+                return VaultCmdResponse {
+                    result: CmdErrorCode::Ok,
+                    message: String::from("Done!"),
+                };
+            }
+            Err(e) => VaultCmdResponse {
+                result: CmdErrorCode::StorageBackendError,
+                message: String::from(format!(
+                    "Cannot create the account, there was an error with the storage backend. (code: {:?})",
+                    e
+                )),
+            },
+            Ok(_) => VaultCmdResponse {
+                result: CmdErrorCode::AccountAlreadyExists,
+                message: String::from(
+                    "Cannot create the account, there is already one with the same name.",
+                ),
+            },
+        }
     }
 }
 
 impl Executor for LoginCmd {
-    fn execute(&self, _account: &mut Account) -> String {
-        unimplemented!("")
+    fn execute(&self, account: &mut Account) -> VaultCmdResponse {
+        *account = Account::default(self.vault_name.to_owned(), self.password.to_owned());
+        match account.load_from_disk() {
+            Err(e) => VaultCmdResponse {
+                result: CmdErrorCode::StorageBackendError,
+                message: String::from(format!(
+                    "Cannot create the account, there was an error with the storage backend. (code: {:?})",
+                    e
+                )),
+            },
+            Ok(_) => VaultCmdResponse {
+                result: CmdErrorCode::Ok,
+                message: String::from(
+                    "Login successful.",
+                ),
+            },
+        }
     }
 }
 
 impl Executor for AddCmd {
-    fn execute(&self, _account: &mut Account) -> String {
+    fn execute(&self, _account: &mut Account) -> VaultCmdResponse {
+        println!("AddCmd");
         unimplemented!("")
     }
 }
 
 impl Executor for ShowCmd {
-    fn execute(&self, _account: &mut Account) -> String {
+    fn execute(&self, _account: &mut Account) -> VaultCmdResponse {
+        println!("ShowCmd");
         unimplemented!("")
     }
 }

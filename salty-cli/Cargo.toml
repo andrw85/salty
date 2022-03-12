@@ -8,10 +8,18 @@ description = "salty-cli is a crate that provides a multiplatform CLI based clie
 
 [dependencies]
 passwords = "3"
-structopt = "0.3"
-question = "0.2.2"
 
-# encrypted file
-cocoon = "0.3.0"
+question = "0.2.2"
+tonic = "0.6.2"
+prost = "0.9.0"
 
 salty-utils = { path = "../salty-utils" }
+tokio = { version = "1.17.0", features = ["full"] }
+serde_json = "1.0.79"
+
+[build-dependencies]
+tonic-build = "0.6.2"
+
+[[bin]]
+name = "salty-cli"
+path = "src/main.rs"

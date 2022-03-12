@@ -3,5 +3,5 @@
 members = [
     "salty-utils",
     "salty-service",
-    #    "cli"
+    "salty-cli"
 ]
