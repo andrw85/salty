@@ -1,5 +1,4 @@
-use crate::storage;
-pub use clap::Parser;
+pub use clap::{Parser, Subcommand};
 pub use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -19,25 +18,27 @@ pub enum Cmd {
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct CreateCmd {
-    #[structopt(short, long, required = true)]
+    #[clap(short, long, required = true)]
     pub vault_name: String,
-    #[structopt(short, long, required = true)]
+    #[clap(short, long, required = true)]
     pub password: String,
+    #[clap(short, long)]
+    pub local: bool,
 }
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct LoginCmd {
-    #[structopt(short, long, required = true)]
+    #[clap(short, long, required = true)]
     pub vault_name: String,
-    #[structopt(short, long, required = true)]
+    #[clap(short, long, required = true)]
     pub password: String,
 }
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct AddCmd {
-    #[structopt(short, long, required = true)]
+    #[clap(short, long, required = true)]
     pub site: String,
-    #[structopt(short, long, required = true)]
+    #[clap(short, long, required = true)]
     pub user: String,
 }
 
@@ -49,6 +50,7 @@ pub enum CmdErrorCode {
     Ok,
     StorageBackendError,
     AccountAlreadyExists,
+    AccountDoesNotExist,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

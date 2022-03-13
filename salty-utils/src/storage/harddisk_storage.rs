@@ -20,6 +20,7 @@ where
 {
     fn store_to_disk(&self) -> Result<(), StorageError>;
     fn load_from_disk<'a, 'b>(&mut self) -> Result<(), StorageError>;
+    fn exists(&self) -> bool;
 }
 
 impl From<cocoon::Error> for StorageError {
@@ -83,7 +84,7 @@ where
             .then(|| 0)
             .ok_or(StorageError::NoAccountFile)?;
 
-        logs::debug!("Loading salt from disk...", vault_path);
+        logs::debug!("Loading salt from disk...");
         let salt_path = PathBuf::from(vault_path.to_string() + ".salt");
         salt_path
             .is_file()
@@ -100,6 +101,17 @@ where
         *self = Self::try_from_slice(&encoded_data).unwrap();
         logs::debug!("Account loaded!");
         Ok(())
+    }
+
+    fn exists(&self) -> bool {
+        let vault_path = file_path(self.name());
+        let path = PathBuf::from(&vault_path);
+        debug!(format!(
+            "Checking account {} exists in disk ... returned {}",
+            self.name(),
+            path.is_file()
+        ));
+        path.is_file()
     }
 }
 

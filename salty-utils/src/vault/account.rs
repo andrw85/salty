@@ -1,7 +1,6 @@
 use crate::security::Cipher;
 use borsh::{BorshDeserialize, BorshSerialize};
 use derivative::Derivative;
-use logs;
 use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -159,9 +158,7 @@ impl Account {
     fn create<S: Into<String>>(cipher: Cipher, name: S, pwd: S, seed: Option<[u8; 32]>) -> Self {
         let password = pwd.into();
 
-        // Seed can be obtained by any cryptographically secure random generator.
-        // ThreadRng is used just for example.
-
+        // Seed obtained by cryptographically secure random generator.
         let new_seed: [u8; 32] = seed.unwrap_or(rand::thread_rng().gen::<[u8; 32]>());
         // let seed = [2u8; 32];
 

@@ -73,8 +73,8 @@ trait Executor {
 impl Executor for CreateCmd {
     fn execute(&self, account: &mut Account) -> VaultCmdResponse {
         *account = Account::default(self.vault_name.to_owned(), self.password.to_owned());
-        match account.load_from_disk() {
-            Err(StorageError::NoAccountFile) => {
+        match account.exists() {
+            false => {
                 // failed loading because no account with same name, create one
                 account.store_to_disk();
                 return VaultCmdResponse {
@@ -82,14 +82,7 @@ impl Executor for CreateCmd {
                     message: String::from("Done!"),
                 };
             }
-            Err(e) => VaultCmdResponse {
-                result: CmdErrorCode::StorageBackendError,
-                message: String::from(format!(
-                    "Cannot create the account, there was an error with the storage backend. (code: {:?})",
-                    e
-                )),
-            },
-            Ok(_) => VaultCmdResponse {
+            true => VaultCmdResponse {
                 result: CmdErrorCode::AccountAlreadyExists,
                 message: String::from(
                     "Cannot create the account, there is already one with the same name.",
@@ -102,19 +95,20 @@ impl Executor for CreateCmd {
 impl Executor for LoginCmd {
     fn execute(&self, account: &mut Account) -> VaultCmdResponse {
         *account = Account::default(self.vault_name.to_owned(), self.password.to_owned());
-        match account.load_from_disk() {
-            Err(e) => VaultCmdResponse {
-                result: CmdErrorCode::StorageBackendError,
-                message: String::from(format!(
-                    "Cannot create the account, there was an error with the storage backend. (code: {:?})",
-                    e
-                )),
+        match account.exists() {
+            false => VaultCmdResponse {
+                result: CmdErrorCode::AccountDoesNotExist,
+                message: String::from("Login failed! Account does not server side."),
             },
-            Ok(_) => VaultCmdResponse {
-                result: CmdErrorCode::Ok,
-                message: String::from(
-                    "Login successful.",
-                ),
+            true => match account.load_from_disk() {
+                Ok(_) => VaultCmdResponse {
+                    result: CmdErrorCode::Ok,
+                    message: String::from("Login successful."),
+                },
+                Err(_) => VaultCmdResponse {
+                    result: CmdErrorCode::StorageBackendError,
+                    message: String::from("Failed loading account from disk!"),
+                },
             },
         }
     }

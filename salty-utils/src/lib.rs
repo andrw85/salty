@@ -4,5 +4,5 @@ pub mod testing;
 pub mod vault;
 
 pub mod logs {
-    pub use logs::{debug, error, info, trace, warn};
+    pub use logs::{debug, error, info, trace, warn, LogConfig};
 }
