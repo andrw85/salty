@@ -1,6 +1,7 @@
 use super::StorageError;
 use crate::{
     logs::debug,
+    security::Cipher,
     vault::{Account, Vault},
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -11,6 +12,7 @@ use std::fs::File;
 use std::io;
 use std::path::PathBuf;
 use std::result::Result;
+use std::str;
 
 // Storing  data from a vault into a file can be achived throughout the HardDiskStorage trait.
 
@@ -19,7 +21,11 @@ where
     Self: Sized,
 {
     fn store_to_disk(&self) -> Result<(), StorageError>;
-    fn load_from_disk<'a, 'b>(&mut self) -> Result<(), StorageError>;
+    fn load_from_disk<S: Into<String>>(
+        cipher: Cipher,
+        name: S,
+        pwd: S,
+    ) -> Result<Self, StorageError>;
     fn exists(&self) -> bool;
 }
 
@@ -54,7 +60,8 @@ where
         permissions.set_readonly(false);
 
         let salt: [u8; 32] = self.salt().clone();
-        let cocoon = self.cipher().with_seed(&self.password(), salt);
+        // let cocoon = self.cipher().with_seed(&self.password(), salt);
+        let cocoon = self.cipher().new(self.password());
         // save the seed in disk:
         fs::write(file_path.to_string() + ".salt", self.salt())?;
 
@@ -73,12 +80,17 @@ where
         Ok(())
     }
 
-    fn load_from_disk<'a, 'b>(&mut self) -> Result<(), StorageError> {
+    fn load_from_disk<S: Into<String>>(
+        cipher: Cipher,
+        name: S,
+        pwd: S,
+    ) -> Result<Self, StorageError> {
+        let name = name.into();
         debug!(format!(
             "Checking account {} exists in disk before loading...",
-            self.name()
+            name.clone()
         ));
-        let vault_path = file_path(self.name());
+        let vault_path = file_path(name.as_str());
         let path = PathBuf::from(&vault_path);
         path.is_file()
             .then(|| 0)
@@ -93,14 +105,20 @@ where
         let salt_bytes = fs::read(salt_path).ok().ok_or(StorageError::ReadingSalt)?;
         let salt: [u8; 32] = <[u8; 32]>::try_from(salt_bytes).unwrap();
 
-        logs::debug!("Salt Loaded. Loadind account...");
+        logs::debug!("Salt Loaded. Loading account...");
         let mut file = File::open(&path)?;
-        let cocoon = self.cipher().with_seed(&self.password(), salt);
-        let encoded_data = cocoon.parse(&mut file).ok().ok_or(StorageError::Cocoon)?;
+        let pwd = pwd.into();
+        let cocoon = cipher.with_seed(pwd.as_bytes(), salt);
+        let pwd_encrypted = cocoon
+            .wrap(pwd.as_bytes())
+            .ok()
+            .ok_or(StorageError::Cocoon)?;
+        let cocoon = cipher.new(&pwd_encrypted[..]);
+        let encoded_data = cocoon.parse(&mut file)?;
 
-        *self = Self::try_from_slice(&encoded_data).unwrap();
+        let res = Self::try_from_slice(&encoded_data).unwrap();
         logs::debug!("Account loaded!");
-        Ok(())
+        Ok(res)
     }
 
     fn exists(&self) -> bool {

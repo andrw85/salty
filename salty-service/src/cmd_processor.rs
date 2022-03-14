@@ -1,10 +1,10 @@
-use crate::config::Config;
 use crate::service::{CommandRequest, CommandResponse};
 use salty_utils::{
     logs,
-    storage::{HardDiskStorage, StorageError},
+    security::Cipher,
+    storage::HardDiskStorage,
     vault::commands::{AddCmd, Cmd, CmdErrorCode, CmdResponse, CreateCmd, LoginCmd, ShowCmd},
-    vault::Account,
+    vault::{Account, MasterPassPhrase},
 };
 use std::sync::{Arc, Mutex};
 
@@ -17,30 +17,57 @@ type VaultCmdResponse = CmdResponse;
 
 #[cfg(test)]
 mod tests_cmd_processor {
-    use super::{Account, Arc, Cmd, CmdProcessor, CreateCmd, Mutex};
-    use salty_utils::{security::Cipher, testing::Testing};
+    use super::*;
+    use salty_utils::testing::*;
     impl Testing for CmdProcessor {
         fn default() -> Self {
+            let plain_pwd = "".to_string();
+            let pass = MasterPassPhrase::default_with_fast_cipher(plain_pwd);
             CmdProcessor {
-                vault: Arc::new(Mutex::new(Account::empty(Cipher::Fast))),
+                vault: Arc::new(Mutex::new(Account::default("testing", pass))),
             }
         }
     }
-    #[test]
-    #[should_panic(expected = "not implemented: ")]
-    fn test_cmd_processor_create_vault() {
+    #[tokio::test]
+    async fn test_cmd_processor_create_vault_and_login() {
+        clean_salty_home_workspace();
         let processor = <CmdProcessor as Testing>::default();
-        let cmd = CreateCmd {
-            vault_name: "test".to_string(),
-        };
-        processor.handle_helper(Cmd::Create(cmd));
+        {
+            let cmd = CreateCmd {
+                vault_name: "test".to_string(),
+                password: "mypass".to_string(),
+                local: false,
+                cipher: Cipher::Fast,
+            };
+            let response: GrpcCommandRp = processor.handle_helper(Cmd::Create(cmd));
+            let rp: CmdResponse = serde_json::from_str(&response.message).unwrap();
+            let result: CmdResponse = CmdResponse {
+                result: CmdErrorCode::Ok,
+                message: String::from("Done!"),
+            };
+            assert_eq!(rp, result);
+        }
+        {
+            let cmd = LoginCmd {
+                vault_name: "test".to_string(),
+                password: "mypass".to_string(),
+                cipher: Cipher::Fast,
+            };
+            let response: GrpcCommandRp = processor.handle_helper(Cmd::Login(cmd));
+            let rp: CmdResponse = serde_json::from_str(&response.message).unwrap();
+            let result: CmdResponse = CmdResponse {
+                result: CmdErrorCode::Ok,
+                message: String::from("Login successful."),
+            };
+            assert_eq!(rp, result);
+        }
     }
 }
 
 impl CmdProcessor {
-    pub fn default(config: &Config) -> Self {
+    pub fn default() -> Self {
         CmdProcessor {
-            vault: Arc::new(Mutex::new(Account::empty(config.cipher.clone()))),
+            vault: Arc::new(Mutex::new(Account::empty())),
         }
     }
 
@@ -72,7 +99,8 @@ trait Executor {
 
 impl Executor for CreateCmd {
     fn execute(&self, account: &mut Account) -> VaultCmdResponse {
-        *account = Account::default(self.vault_name.to_owned(), self.password.to_owned());
+        let pass_phrase = MasterPassPhrase::new(self.cipher.clone(), self.password.to_owned());
+        *account = Account::default(self.vault_name.to_owned(), pass_phrase);
         match account.exists() {
             false => {
                 // failed loading because no account with same name, create one
@@ -94,22 +122,20 @@ impl Executor for CreateCmd {
 
 impl Executor for LoginCmd {
     fn execute(&self, account: &mut Account) -> VaultCmdResponse {
-        *account = Account::default(self.vault_name.to_owned(), self.password.to_owned());
-        match account.exists() {
-            false => VaultCmdResponse {
-                result: CmdErrorCode::AccountDoesNotExist,
-                message: String::from("Login failed! Account does not server side."),
-            },
-            true => match account.load_from_disk() {
-                Ok(_) => VaultCmdResponse {
+        match Account::load_from_disk(self.cipher.clone(), &self.vault_name, &self.password) {
+            Ok(acc) => {
+                *account = acc;
+                return VaultCmdResponse {
                     result: CmdErrorCode::Ok,
                     message: String::from("Login successful."),
-                },
-                Err(_) => VaultCmdResponse {
+                };
+            }
+            Err(_) => {
+                return VaultCmdResponse {
                     result: CmdErrorCode::StorageBackendError,
                     message: String::from("Failed loading account from disk!"),
-                },
-            },
+                }
+            }
         }
     }
 }

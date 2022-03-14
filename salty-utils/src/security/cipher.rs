@@ -13,10 +13,10 @@ impl Default for Cipher {
 }
 
 impl Cipher {
-    pub fn new<'a>(&self, pwd: &'a String) -> Cocoon<'a, cocoon::Creation> {
+    pub fn new<'a>(&self, pwd: &'a [u8]) -> Cocoon<'a, cocoon::Creation> {
         match self {
-            Cipher::Fast => Cocoon::new(pwd.as_bytes()).with_weak_kdf(),
-            Cipher::Slow => Cocoon::new(pwd.as_bytes()),
+            Cipher::Fast => Cocoon::new(pwd).with_weak_kdf(),
+            Cipher::Slow => Cocoon::new(pwd),
         }
     }
     pub fn from_bytes<'a>(&self, pwd: &'a [u8]) -> Cocoon<'a, cocoon::Creation> {

@@ -100,7 +100,7 @@ impl VaultService {
             config.shutdown_timeout * 1000,
         )));
         let vault = VaultService {
-            processor: CmdProcessor::default(&config),
+            processor: CmdProcessor::default(),
             config: config,
             sender: sender,
             timer_handler: timer,

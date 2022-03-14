@@ -1,6 +1,11 @@
+use crate::security::Cipher;
 pub use clap::{Parser, Subcommand};
 pub use serde::{Deserialize, Serialize};
 use std::env;
+
+pub trait DefaultCipher {
+    fn default_cipher() -> Cipher;
+}
 
 /// Salty  is an open implementation of a password management system.
 #[derive(Serialize, Deserialize, Debug, Parser)]
@@ -24,6 +29,11 @@ pub struct CreateCmd {
     pub password: String,
     #[clap(short, long)]
     pub local: bool,
+    #[serde(skip)]
+    #[clap(skip = Cipher::Slow)]
+    // The cipher field is not serializable/deserializable, this protects from an attacker
+    // trying to send a malicious value to compromise security.
+    pub cipher: Cipher,
 }
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
@@ -32,6 +42,9 @@ pub struct LoginCmd {
     pub vault_name: String,
     #[clap(short, long, required = true)]
     pub password: String,
+    #[serde(skip)]
+    #[clap(skip = Cipher::Slow)]
+    pub cipher: Cipher,
 }
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
@@ -45,7 +58,7 @@ pub struct AddCmd {
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct ShowCmd {}
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum CmdErrorCode {
     Ok,
     StorageBackendError,
@@ -53,7 +66,7 @@ pub enum CmdErrorCode {
     AccountDoesNotExist,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CmdResponse {
     pub result: CmdErrorCode,
     pub message: String, // used only when error code is not CmdErrorCode::Ok
