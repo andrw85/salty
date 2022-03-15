@@ -1,7 +1,6 @@
 use crate::service::{CommandRequest, CommandResponse};
 use salty_utils::{
     logs,
-    security::Cipher,
     storage::HardDiskStorage,
     vault::commands::{AddCmd, Cmd, CmdErrorCode, CmdResponse, CreateCmd, LoginCmd, ShowCmd},
     vault::{Account, MasterPassPhrase},
@@ -18,7 +17,8 @@ type VaultCmdResponse = CmdResponse;
 #[cfg(test)]
 mod tests_cmd_processor {
     use super::*;
-    use salty_utils::testing::*;
+
+    use salty_utils::{security::Cipher, testing::*};
     impl Testing for CmdProcessor {
         fn default() -> Self {
             let plain_pwd = "".to_string();
@@ -73,9 +73,9 @@ impl CmdProcessor {
 
     pub fn handle(&self, _req: &CommandRequest) -> GrpcCommandRp {
         let cmd: Cmd = serde_json::from_str(&_req.command).unwrap();
-        logs::debug!("CmdProcessor received command request", cmd);
+        logs::debug!("CmdProcessor received command request");
         let response = self.handle_helper(cmd);
-        logs::debug!("CmdProcessor returning response", response);
+        logs::debug!("CmdProcessor returning response");
         response
     }
     fn handle_helper(&self, cmd: Cmd) -> GrpcCommandRp {

@@ -1,7 +1,7 @@
 use super::StorageError;
 use crate::{
-    logs::debug,
-    security::Cipher,
+    logs,
+    security::{self, Cipher},
     vault::{Account, Vault},
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -46,8 +46,10 @@ where
     Self: BorshSerialize + BorshDeserialize + Vault,
 {
     fn store_to_disk(&self) -> Result<(), StorageError> {
+        let name = security::hash(self.name()).unwrap();
+
+        let file_path = file_path(&name);
         logs::debug!("Starting process for storing account in disk...");
-        let file_path = file_path(self.name());
 
         //
         // Save vault data in disk
@@ -59,8 +61,6 @@ where
         let mut permissions = metadata.permissions();
         permissions.set_readonly(false);
 
-        let salt: [u8; 32] = self.salt().clone();
-        // let cocoon = self.cipher().with_seed(&self.password(), salt);
         let cocoon = self.cipher().new(self.password());
         // save the seed in disk:
         fs::write(file_path.to_string() + ".salt", self.salt())?;
@@ -85,12 +85,10 @@ where
         name: S,
         pwd: S,
     ) -> Result<Self, StorageError> {
-        let name = name.into();
-        debug!(format!(
-            "Checking account {} exists in disk before loading...",
-            name.clone()
-        ));
-        let vault_path = file_path(name.as_str());
+        let name = security::hash(&name.into()).unwrap();
+
+        logs::debug!("Checking account  exists in disk before loading...");
+        let vault_path = file_path(&name);
         let path = PathBuf::from(&vault_path);
         path.is_file()
             .then(|| 0)
@@ -124,11 +122,7 @@ where
     fn exists(&self) -> bool {
         let vault_path = file_path(self.name());
         let path = PathBuf::from(&vault_path);
-        debug!(format!(
-            "Checking account {} exists in disk ... returned {}",
-            self.name(),
-            path.is_file()
-        ));
+        logs::debug!("Checking account exists in disk");
         path.is_file()
     }
 }

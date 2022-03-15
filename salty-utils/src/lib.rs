@@ -4,5 +4,6 @@ pub mod testing;
 pub mod vault;
 
 pub mod logs {
-    pub use logs::{debug, error, info, trace, warn, LogConfig};
+    pub use env_logger::init;
+    pub use log::{debug, error, info, log_enabled, Level};
 }

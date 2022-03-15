@@ -1,4 +1,4 @@
-use crate::security::Cipher;
+use crate::security::{self, Cipher};
 use borsh::{BorshDeserialize, BorshSerialize};
 use derivative::Derivative;
 use rand::Rng;
@@ -195,6 +195,7 @@ impl Account {
     }
 
     pub fn default<S: Into<String>>(name: S, pwd: MasterPassPhrase) -> Self {
+        security::generate_salt();
         Account::create(name, pwd)
     }
 

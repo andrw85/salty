@@ -1,18 +1,46 @@
+use crate::logs;
 use pbkdf2::{
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Pbkdf2,
 };
+use std::fs;
+use std::path::PathBuf;
 
-pub fn hash(password: &str, salt: &str) -> Result<String, &'static str> {
+pub fn generate_salt() {
+    logs::debug!("Generating general salt...");
+    let salt = SaltString::generate(&mut OsRng);
+    //
+    // Save vault data in disk
+    //
+    let salt_path = dirs::home_dir()
+        .expect("No home directory found in your system!")
+        .join(".salty/")
+        .join("salty")
+        .with_extension("salt");
+    let path = PathBuf::from(&salt_path);
+    if path.is_file() {
+        return;
+    }
+
+    fs::write(salt_path, salt.as_bytes()).expect("Could not write salt!");
+    logs::debug!("Generated...");
+}
+
+fn load_salt() -> SaltString {
+    logs::debug!("Loading general salt...");
+    let salt_path = dirs::home_dir()
+        .expect("No home directory found in your system!")
+        .join(".salty/")
+        .join("salty")
+        .with_extension("salt");
+    let data = fs::read_to_string(salt_path).unwrap();
+    SaltString::new(&data).unwrap()
+}
+
+pub fn hash(password: &str) -> Result<String, Box<dyn std::error::Error>> {
     let pwd = password.as_bytes();
-    let salt_tmp = SaltString::new(&salt).expect("Invalid Salt generated!");
-    // let salt = salt.as_bytes();
-    // println!("salt {}", &salt.as_str());
-    // Hash pwd to PHC string ($pbkdf2-sha256$...)
-    let password_hash = Pbkdf2.hash_password(pwd, &salt_tmp).unwrap().to_string();
+    let salt = load_salt();
+    let password_hash = Pbkdf2.hash_password(pwd, &salt).unwrap();
 
-    // Verify pwd against PHC string
-    let parsed_hash = PasswordHash::new(&password_hash).unwrap();
-    assert!(Pbkdf2.verify_password(pwd, &parsed_hash).is_ok());
-    Ok(password_hash)
+    Ok(password_hash.hash.unwrap().to_string())
 }

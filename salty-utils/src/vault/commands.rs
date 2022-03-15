@@ -1,7 +1,6 @@
 use crate::security::Cipher;
 pub use clap::{Parser, Subcommand};
 pub use serde::{Deserialize, Serialize};
-use std::env;
 
 pub trait DefaultCipher {
     fn default_cipher() -> Cipher;
@@ -38,7 +37,6 @@ pub struct CreateCmd {
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct LoginCmd {
-    #[clap(short, long, required = true)]
     pub vault_name: String,
     #[clap(short, long, required = true)]
     pub password: String,

@@ -6,6 +6,7 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    logs::init();
     let config = Config::parse();
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), config.port);
 
