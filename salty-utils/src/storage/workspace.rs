@@ -1,5 +1,16 @@
+use crate::security::generate_salt;
 use std::fs;
 use std::sync::Mutex;
+
+#[derive(Debug)]
+pub enum Error {
+    FailedCreatingDirectory,
+    FailedDeletingDirectory,
+    FailedDeletingAccountFile,
+    FailedDeletingAccountSaltFile,
+}
+
+type Result<T> = std::result::Result<T, Error>;
 
 pub struct Workspace {
     mutex: Mutex<std::path::PathBuf>,
@@ -16,14 +27,25 @@ impl Workspace {
         }
     }
 
-    pub fn setup_workspace(&mut self) {
+    pub fn setup_workspace(&mut self) -> Result<()> {
         let default_dir = self.mutex.lock().unwrap();
-        fs::create_dir(default_dir.as_path()).expect("Could not create salty home folder!");
+        match fs::create_dir(default_dir.as_path()) {
+            Ok(_) => return Ok(()),
+            Err(_) => return Err(Error::FailedCreatingDirectory),
+        }
     }
 
-    pub fn delete_workspace(&mut self) {
+    pub fn delete_workspace(&mut self) -> Result<()> {
         let default_dir = self.mutex.lock().unwrap();
-        fs::remove_dir_all(default_dir.as_path()).expect("Could not remove salty home folder!");
+        match fs::remove_dir_all(default_dir.as_path()) {
+            Ok(_) => return Ok(()),
+            Err(_) => return Err(Error::FailedDeletingDirectory),
+        }
+    }
+    pub fn reset_workspace(&mut self) -> Result<()> {
+        generate_salt();
+        let _ = self.delete_workspace();
+        self.setup_workspace()
     }
 }
 

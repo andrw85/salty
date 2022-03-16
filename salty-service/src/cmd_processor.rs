@@ -30,7 +30,7 @@ mod tests_cmd_processor {
     }
     #[tokio::test]
     async fn test_cmd_processor_create_vault_and_login() {
-        clean_salty_home_workspace();
+        reset_salty_home();
         let processor = <CmdProcessor as Testing>::default();
         {
             let cmd = CreateCmd {
@@ -104,7 +104,7 @@ impl Executor for CreateCmd {
         match account.exists() {
             false => {
                 // failed loading because no account with same name, create one
-                account.store_to_disk();
+                let _ = account.store_to_disk();
                 return VaultCmdResponse {
                     result: CmdErrorCode::Ok,
                     message: String::from("Done!"),

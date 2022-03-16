@@ -38,7 +38,7 @@ impl PasswordQuery {
     }
 }
 
-pub fn check_pass_strength(password: String) -> Result<(), String> {
+pub fn _check_pass_strength(password: String) -> Result<(), String> {
     let estimate = zxcvbn(&password, &[]).expect("Failed checking password strength");
     if estimate.score() < 3 {
         let feedback = estimate

@@ -22,7 +22,6 @@ pub enum Cmd {
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 pub struct CreateCmd {
-    #[clap(short, long, required = true)]
     pub vault_name: String,
     #[clap(short, long, required = true)]
     pub password: String,

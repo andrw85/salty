@@ -1,4 +1,4 @@
-use super::StorageError;
+use super::{StorageError, Workspace};
 use crate::{
     logs,
     security::{self, Cipher},
@@ -49,12 +49,16 @@ where
         let name = security::hash(self.name()).unwrap();
 
         let file_path = file_path(&name);
-        logs::debug!("Starting process for storing account in disk...");
+        logs::debug!(
+            "Starting process for storing account in disk...{}",
+            file_path
+        );
 
         //
         // Save vault data in disk
         //
-        let mut file = File::create(&file_path).expect("Could not create db file.");
+        let mut file =
+            File::create(&file_path).expect(&format!("Could not create db file.{}", file_path));
 
         // make file only readable
         let metadata = file.metadata().expect("Could not obtain file attributes");
@@ -128,10 +132,16 @@ where
 }
 
 pub fn file_path(name: &str) -> String {
-    dirs::home_dir()
+    let dir = dirs::home_dir()
         .expect("No home directory found in your system!")
-        .join(".salty/")
-        .join(name)
+        .join(".salty/");
+    let path = PathBuf::from(&dir);
+
+    if !path.is_dir() {
+        let _ = Workspace::new().setup_workspace();
+    }
+
+    dir.join(name)
         .with_extension("slt")
         .to_str()
         .expect("invalid path to config directroy!")

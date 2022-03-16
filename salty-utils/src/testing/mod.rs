@@ -1,14 +1,8 @@
-use dirs;
-use std::fs;
-
+use crate::storage::Workspace;
 pub trait Testing {
     fn default() -> Self;
 }
 
-pub fn clean_salty_home_workspace() {
-    let home_dir = dirs::home_dir()
-        .expect("No home directory found in your system!")
-        .join(".salty/");
-    fs::remove_dir_all(&home_dir).expect("Couldn't remove workspace directory");
-    fs::create_dir(&home_dir).expect("Couldn't create workspace directory");
+pub fn reset_salty_home() {
+    let _ = Workspace::new().reset_workspace();
 }
