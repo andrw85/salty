@@ -103,7 +103,6 @@ impl Executor for CreateCmd {
         *account = Account::default(self.vault_name.to_owned(), pass_phrase);
         match account.exists() {
             false => {
-                // failed loading because no account with same name, create one
                 let _ = account.store_to_disk();
                 return VaultCmdResponse {
                     result: CmdErrorCode::Ok,
@@ -111,10 +110,8 @@ impl Executor for CreateCmd {
                 };
             }
             true => VaultCmdResponse {
-                result: CmdErrorCode::AccountAlreadyExists,
-                message: String::from(
-                    "Cannot create the account, there is already one with the same name.",
-                ),
+                result: CmdErrorCode::AccountCreation,
+                message: String::from("Cannot create the account!"),
             },
         }
     }
@@ -132,8 +129,8 @@ impl Executor for LoginCmd {
             }
             Err(_) => {
                 return VaultCmdResponse {
-                    result: CmdErrorCode::StorageBackendError,
-                    message: String::from("Failed loading account from disk!"),
+                    result: CmdErrorCode::AccountLogin,
+                    message: String::from("Wrong account name and/or password."),
                 }
             }
         }

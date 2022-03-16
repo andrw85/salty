@@ -61,6 +61,8 @@ pub enum CmdErrorCode {
     StorageBackendError,
     AccountAlreadyExists,
     AccountDoesNotExist,
+    AccountCreation,
+    AccountLogin,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
